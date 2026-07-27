@@ -84,7 +84,7 @@
                         </div>
                         <div>
                             <h3 class='font-bold text-base text-slate-800 m-0'>ประวัติการตรวจพบบุหรี่ไฟฟ้า</h3>
-                            <p class='text-xs text-slate-500 m-0'>บันทึกวัน เวลา และค่าเซนเซอร์ที่ตรวจพบความผิดปกติ</p>
+                            <p class='text-xs text-slate-500 m-0'>บันทึกวัน เวลา และค่าเซนเซอร์</p>
                         </div>
                     </div>
                     <div class='text-right bg-red-50 border border-red-100 px-4 py-2 rounded-2xl'>
@@ -96,14 +96,14 @@
 
                 <div class='space-y-3 max-h-60 overflow-y-auto pr-1' id='detection-log-list'>
                     <div id='empty-log' class='text-center py-6 text-slate-400 text-xs font-semibold'>
-                        🍃 ยังไม่มีประวัติการตรวจพบความผิดปกติ
+                         ยังไม่มีประวัติ
                     </div>
                 </div>
             </section>
 
             <section class='bg-white rounded-3xl border border-slate-200 p-6 shadow-sm mb-6 flex flex-col gap-6'>
                 <h3 class='font-bold text-base text-slate-800 flex items-center gap-2 border-b pb-3'>
-                    <i data-lucide='line-chart' width='18' height='18'></i> กราฟแนวโน้มคุณภาพอากาศ (Real-time)
+                    <i data-lucide='line-chart' width='18' height='18'></i> กราฟแนวโน้มคุณภาพอากาศ
                 </h3>
 
                 <div>
@@ -211,7 +211,7 @@
             alertDismissed = true;
         }
 
-        // 📝 ฟังก์ชันเพิ่มการบันทึกประวัติเหตุการณ์เตือนภัยลงในหน้าเว็บ
+    
         function addDetectionLog(data, fullDateTimeStr) {
             totalDetections++;
             document.getElementById('detection-count').innerText = totalDetections;
