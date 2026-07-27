@@ -48,7 +48,7 @@
         }
         function verifyAdmin() {
             let pass = document.getElementById('admin-password').value;
-            if(pass === '1234') { // ถ้ารหัสผ่านถูก ให้ลิงก์ไปหน้า admin.html
+            if(pass === '1234') { 
                 window.location.href = 'admin.html';
             } else {
                 document.getElementById('login-error').classList.remove('hidden');
