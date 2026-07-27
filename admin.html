@@ -9,7 +9,23 @@
     <script src='https://cdn.jsdelivr.net/npm/chart.js'></script>
     <link rel='stylesheet' href='style.css'>
 </head>
-<body class='bg-slate-100'>
+<body class='bg-slate-100 relative'>
+
+    <div id='alert-modal' class='fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-all duration-300'>
+        <div class='bg-white rounded-3xl max-w-md w-full p-6 text-center shadow-2xl border-4 border-red-500 animate-bounce-short'>
+            <div class='w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse'>
+                <i data-lucide='alert-triangle' width='48' height='48'></i>
+            </div>
+            <h2 class='text-2xl font-black text-red-600 mb-2'>🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!</h2>
+            <p class='text-slate-600 text-sm mb-6'>
+                ระบบตรวจพบปริมาณฝุ่น PM2.5 และแก๊สพุ่งสูงขึ้นเกินค่ามาตรฐานในขณะนี้ โปรดตรวจสอบพื้นที่โดยด่วน
+            </p>
+            <button onclick='closeAlertModal()' class='w-full py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-lg shadow-red-200 active:scale-95 transition-all text-sm flex items-center justify-center gap-2'>
+                <i data-lucide='check-circle' width='18' height='18'></i> รับทราบ / ปิดการแจ้งเตือน
+            </button>
+        </div>
+    </div>
+
     <div class='app-shell'>
         <header class='dashboard-wrap'>
             <div class='flex items-center justify-between mb-4 relative z-10'>
@@ -112,8 +128,8 @@
 
     <script>
         const ESP32_IP = '10.20.1.62';
+        let alertDismissed = false; // ตัวแปรจำสถานะการกดปิดปุ่มรับทราบ
 
-        // ฟังก์ชันสร้างกราฟเพื่อลดโค้ดซ้ำ
         function createSingleChart(canvasId, label, color, bgColor) {
             const ctx = document.getElementById(canvasId).getContext('2d');
             return new Chart(ctx, {
@@ -143,12 +159,10 @@
             });
         }
 
-        // สร้าง 3 กราฟแยกกัน
         const pmChart   = createSingleChart('pmChart', 'PM 2.5', '#ea580c', 'rgba(234, 88, 12, 0.1)');
         const gasChart  = createSingleChart('gasChart', 'แก๊ส', '#059669', 'rgba(5, 150, 105, 0.1)');
         const tempChart = createSingleChart('tempChart', 'อุณหภูมิ', '#2563eb', 'rgba(37, 99, 235, 0.1)');
 
-        // ฟังก์ชันดันข้อมูลเข้ากราฟและสั่งลบจุดที่เก่าเกิน 10 จุด
         function pushDataToChart(chart, timeLabel, value) {
             if (chart.data.labels.length >= 10) {
                 chart.data.labels.shift();
@@ -157,6 +171,18 @@
             chart.data.labels.push(timeLabel);
             chart.data.datasets[0].data.push(value);
             chart.update();
+        }
+
+        // ฟังก์ชันสั่งเปิด-ปิด Pop-up
+        function showAlertModal() {
+            if (!alertDismissed) {
+                document.getElementById('alert-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeAlertModal() {
+            document.getElementById('alert-modal').classList.add('hidden');
+            alertDismissed = true; // มาร์กไว้ว่าแอดมินรับทราบแล้ว จะได้ไม่เด้งซ้ำ
         }
 
         function updateData() {
@@ -170,22 +196,31 @@
                     let pill = document.getElementById('status-pill');
                     let txt = document.getElementById('status-text');
 
+                    // 🚨 เงื่อนไขตรวจพบบุหรี่ไฟฟ้า
                     if (data.pm25 >= 150 && data.gas >= 1500) {
                         txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
                         pill.style.background = '#7f1d1d';
                         pill.style.color = '#ffffff';
-                    } else if (data.pm25 >= 150) {
-                        txt.innerText = '⚠️ คุณภาพอากาศอันตราย';
-                        pill.style.background = '#ffe3e5'; 
-                        pill.style.color = '#dd3445';
-                    } else if (data.pm25 >= 100) {
-                        txt.innerText = '🟠 เฝ้าระวังคุณภาพอากาศ';
-                        pill.style.background = '#fff1d8'; 
-                        pill.style.color = '#b86d00';
+                        
+                        showAlertModal(); // เด้ง Pop-up สดๆ กลางจอทันที
                     } else {
-                        txt.innerText = '🟢 คุณภาพอากาศปกติ';
-                        pill.style.background = '#e5f8ef'; 
-                        pill.style.color = '#188d58';
+                        // ถ้าค่ากลับมาปกติ ให้รีเซ็ตสถานะการกดปิด เพื่อพร้อมเด้งใหม่ในครั้งถัดไป
+                        alertDismissed = false;
+                        document.getElementById('alert-modal').classList.add('hidden');
+
+                        if (data.pm25 >= 150) {
+                            txt.innerText = '⚠️ คุณภาพอากาศอันตราย';
+                            pill.style.background = '#ffe3e5'; 
+                            pill.style.color = '#dd3445';
+                        } else if (data.pm25 >= 100) {
+                            txt.innerText = '🟠 เฝ้าระวังคุณภาพอากาศ';
+                            pill.style.background = '#fff1d8'; 
+                            pill.style.color = '#b86d00';
+                        } else {
+                            txt.innerText = '🟢 คุณภาพอากาศปกติ';
+                            pill.style.background = '#e5f8ef'; 
+                            pill.style.color = '#188d58';
+                        }
                     }
 
                     const now = new Date();
@@ -193,7 +228,6 @@
                     const timeStr = now.toLocaleTimeString('th-TH');
                     document.getElementById('updated-time').innerText = `${dateStr} เวลา ${timeStr} น.`;
 
-                    // อัปเดตกราฟทั้ง 3 แยกกัน
                     pushDataToChart(pmChart, timeStr, data.pm25);
                     pushDataToChart(gasChart, timeStr, data.gas);
                     pushDataToChart(tempChart, timeStr, data.temp);
