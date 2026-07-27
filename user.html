@@ -64,17 +64,32 @@
                     document.getElementById('temp-value').innerText = data.temp;
                     
                     let pill = document.getElementById('status-pill');
-                    let txt = document.getElementById('status-text');
-                    if(data.pm25 >= 150){
-                        txt.innerText = '⚠️ คุณภาพอากาศอันตราย';
-                        pill.style.background = '#ffe3e5'; pill.style.color = '#dd3445';
-                    } else if(data.pm25 >= 100){
-                        txt.innerText = '🟠 เฝ้าระวังคุณภาพอากาศ';
-                        pill.style.background = '#fff1d8'; pill.style.color = '#b86d00';
-                    } else {
-                        txt.innerText = '🟢 คุณภาพอากาศปกติ';
-                        pill.style.background = '#e5f8ef'; pill.style.color = '#188d58';
-                    }
+let txt = document.getElementById('status-text');
+
+// 🚨 1. เงื่อนไขตรวจพบบุหรี่ไฟฟ้า (PM2.5 >= 150 และ แก๊ส >= 1500 พร้อมกัน)
+if (data.pm25 >= 150 && data.gas >= 1500) {
+    txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
+    pill.style.background = '#7f1d1d'; // สีแดงเข้ม/เลือดหมู
+    pill.style.color = '#ffffff';      // ตัวหนังสือสีขาว เด่นชัดเจน
+} 
+// ⚠️ 2. ค่า PM2.5 เกินอย่างเดียว (อากาศอันตราย)
+else if (data.pm25 >= 150) {
+    txt.innerText = '⚠️ คุณภาพอากาศอันตราย';
+    pill.style.background = '#ffe3e5'; 
+    pill.style.color = '#dd3445';
+} 
+// 🟠 3. ค่า PM2.5 ปานกลาง (เฝ้าระวัง)
+else if (data.pm25 >= 100) {
+    txt.innerText = '🟠 เฝ้าระวังคุณภาพอากาศ';
+    pill.style.background = '#fff1d8'; 
+    pill.style.color = '#b86d00';
+} 
+// 🟢 4. ปกติ
+else {
+    txt.innerText = '🟢 คุณภาพอากาศปกติ';
+    pill.style.background = '#e5f8ef'; 
+    pill.style.color = '#188d58';
+}
 
                     // 🕒 แสดงผลวันที่และเวลาปัจจุบันแบบไทย
                     const now = new Date();
