@@ -75,7 +75,15 @@
                 txt.innerText = '🟢 คุณภาพอากาศปกติ';
                 pill.style.background = '#e5f8ef'; pill.style.color = '#188d58';
             }
-            document.getElementById('updated-time').innerText = new Date().toLocaleTimeString('th-TH');
+            const now = new Date();
+const dateStr = now.toLocaleDateString('th-TH', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+});
+const timeStr = now.toLocaleTimeString('th-TH');
+
+document.getElementById('updated-time').innerText = `${dateStr} เวลา ${timeStr} น.`;
         })
         .catch(err => {
             console.error(err);
