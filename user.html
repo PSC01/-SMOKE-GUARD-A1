@@ -55,44 +55,47 @@
 
     <script>
         function updateData() {
-    // IP บนบอร์ด IPST 
-    fetch('http://10.20.1.62/data') 
-        .then(res => res.json())
-        .then(data => {
-            document.getElementById('pm-value').innerText = data.pm25;
-            document.getElementById('gas-value').innerText = data.gas;
-            document.getElementById('temp-value').innerText = data.temp;
-            
-            let pill = document.getElementById('status-pill');
-            let txt = document.getElementById('status-text');
-            if(data.pm25 >= 150){
-                txt.innerText = '⚠️ คุณภาพอากาศอันตราย';
-                pill.style.background = '#ffe3e5'; pill.style.color = '#dd3445';
-            } else if(data.pm25 >= 100){
-                txt.innerText = '🟠 เฝ้าระวังคุณภาพอากาศ';
-                pill.style.background = '#fff1d8'; pill.style.color = '#b86d00';
-            } else {
-                txt.innerText = '🟢 คุณภาพอากาศปกติ';
-                pill.style.background = '#e5f8ef'; pill.style.color = '#188d58';
-            }
-            const now = new Date();
-const dateStr = now.toLocaleDateString('th-TH', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-});
-const timeStr = now.toLocaleTimeString('th-TH');
+            // IP บนบอร์ด ESP32
+            fetch('http://10.20.1.62/data') 
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('pm-value').innerText = data.pm25;
+                    document.getElementById('gas-value').innerText = data.gas;
+                    document.getElementById('temp-value').innerText = data.temp;
+                    
+                    let pill = document.getElementById('status-pill');
+                    let txt = document.getElementById('status-text');
+                    if(data.pm25 >= 150){
+                        txt.innerText = '⚠️ คุณภาพอากาศอันตราย';
+                        pill.style.background = '#ffe3e5'; pill.style.color = '#dd3445';
+                    } else if(data.pm25 >= 100){
+                        txt.innerText = '🟠 เฝ้าระวังคุณภาพอากาศ';
+                        pill.style.background = '#fff1d8'; pill.style.color = '#b86d00';
+                    } else {
+                        txt.innerText = '🟢 คุณภาพอากาศปกติ';
+                        pill.style.background = '#e5f8ef'; pill.style.color = '#188d58';
+                    }
 
-document.getElementById('updated-time').innerText = `${dateStr} เวลา ${timeStr} น.`;
-        })
-        .catch(err => {
-            console.error(err);
-            document.getElementById('status-text').innerText = '⏳ กำลังรอข้อมูลจากบอร์ด...';
-        });
-}
-updateData();
-setInterval(updateData, 1000);
-lucide.createIcons();
+                    // 🕒 แสดงผลวันที่และเวลาปัจจุบันแบบไทย
+                    const now = new Date();
+                    const dateStr = now.toLocaleDateString('th-TH', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                    });
+                    const timeStr = now.toLocaleTimeString('th-TH');
+
+                    document.getElementById('updated-time').innerText = `${dateStr} เวลา ${timeStr} น.`;
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('status-text').innerText = '⏳ กำลังรอข้อมูลจากบอร์ด...';
+                });
+        }
+
+        updateData();
+        setInterval(updateData, 1000);
+        lucide.createIcons();
     </script>
 </body>
 </html>
