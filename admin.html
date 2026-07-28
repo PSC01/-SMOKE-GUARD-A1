@@ -108,20 +108,15 @@
                 </h3>
 
                 <div>
-                    <h4 class='text-xs font-bold text-orange-600 mb-2 flex items-center gap-1'>
-                        <span class='w-2 h-2 rounded-full bg-orange-500'></span> ปริมาณฝุ่น PM 2.5 (µg/m³)
-                    </h4>
-                    <div class='relative w-full h-40 bg-slate-50 p-2 rounded-xl border border-slate-100'>
-                        <canvas id='pmChart'></canvas>
+                    <div class='flex items-center justify-between mb-2'>
+                        <h4 class='text-xs font-bold text-slate-700 flex items-center gap-3'>
+                            <span class='flex items-center gap-1 text-sky-500'><span class='w-3 h-1 bg-sky-400 rounded-full'></span> สีฟ้า PM2.5</span>
+                            <span class='flex items-center gap-1 text-emerald-500'><span class='w-3 h-1 bg-emerald-500 rounded-full'></span> สีเขียว Gas</span>
+                        </h4>
+                        <span class='text-[11px] text-slate-400 font-semibold'>ตัวนับเวลาทุกๆ รอบบันทึก</span>
                     </div>
-                </div>
-
-                <div>
-                    <h4 class='text-xs font-bold text-emerald-600 mb-2 flex items-center gap-1'>
-                        <span class='w-2 h-2 rounded-full bg-emerald-500'></span> ความหนาแน่นแก๊ส
-                    </h4>
-                    <div class='relative w-full h-40 bg-slate-50 p-2 rounded-xl border border-slate-100'>
-                        <canvas id='gasChart'></canvas>
+                    <div class='relative w-full h-64 bg-white p-3 rounded-xl border border-slate-200 shadow-inner'>
+                        <canvas id='combinedChart'></canvas>
                     </div>
                 </div>
 
@@ -129,7 +124,7 @@
                     <h4 class='text-xs font-bold text-blue-600 mb-2 flex items-center gap-1'>
                         <span class='w-2 h-2 rounded-full bg-blue-500'></span> อุณหภูมิห้อง (°C)
                     </h4>
-                    <div class='relative w-full h-40 bg-slate-50 p-2 rounded-xl border border-slate-100'>
+                    <div class='relative w-full h-36 bg-slate-50 p-2 rounded-xl border border-slate-100'>
                         <canvas id='tempChart'></canvas>
                     </div>
                 </div>
@@ -157,13 +152,10 @@
         let alertDismissed = false;
         let isCurrentlyAlerting = false; 
 
-        // 💾 ดึงค่าตรวจพบสะสมจาก localStorage (ถ้าไม่มี ให้เริ่มที่ 0)
+        // 💾 ดึงค่าตรวจพบสะสมจาก localStorage
         let totalDetections = parseInt(localStorage.getItem('totalDetections')) || 0;
-        
-        // แสดงค่าสะสมเดิมทันทีที่โหลดหน้าเว็บ
         document.getElementById('detection-count').innerText = totalDetections;
 
-        // ฟังก์ชันล้างค่าสะสมกลับเป็น 0
         function resetDetectionCount() {
             if (confirm('คุณต้องการรีเซ็ตตัวเลขการตรวจพบสะสมเป็น 0 ใช่หรือไม่?')) {
                 totalDetections = 0;
@@ -172,47 +164,102 @@
             }
         }
 
-        function createSingleChart(canvasId, label, color, bgColor) {
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            return new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: label,
+        // 📈 สร้างกราฟรวม (PM2.5 เส้นฟ้า + GAS เส้นเขียว)
+        const ctxCombined = document.getElementById('combinedChart').getContext('2d');
+        const combinedChart = new Chart(ctxCombined, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'สีฟ้า PM2.5',
                         data: [],
-                        borderColor: color,
-                        backgroundColor: bgColor,
-                        borderWidth: 2,
-                        tension: 0.3,
-                        fill: true,
-                        pointRadius: 2
-                    }]
+                        borderColor: '#38bdf8', // สีฟ้า
+                        backgroundColor: 'transparent',
+                        borderWidth: 2.5,
+                        tension: 0.2,
+                        pointRadius: 1
+                    },
+                    {
+                        label: 'สีเขียว GAS',
+                        data: [],
+                        borderColor: '#22c55e', // สีเขียว
+                        backgroundColor: 'transparent',
+                        borderWidth: 2.5,
+                        tension: 0.2,
+                        pointRadius: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { display: true, ticks: { font: { size: 10 } } },
-                        y: { beginAtZero: true, ticks: { font: { size: 10 } } }
+                scales: {
+                    x: {
+                        display: true,
+                        title: { display: true, text: 'ตัวนับเวลาทุกๆ รอบบันทึก', font: { size: 11 } },
+                        ticks: { font: { size: 9 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'ค่าตัวเลข', font: { size: 11 } },
+                        ticks: { font: { size: 10 } }
                     }
                 }
-            });
+            }
+        });
+
+        // 🌡️ สร้างกราฟอุณหภูมิ
+        const ctxTemp = document.getElementById('tempChart').getContext('2d');
+        const tempChart = new Chart(ctxTemp, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'อุณหภูมิ',
+                    data: [],
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: true, ticks: { font: { size: 9 } } },
+                    y: { beginAtZero: true, ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+
+        function pushCombinedData(timeLabel, pmValue, gasValue) {
+            if (combinedChart.data.labels.length >= 15) {
+                combinedChart.data.labels.shift();
+                combinedChart.data.datasets[0].data.shift();
+                combinedChart.data.datasets[1].data.shift();
+            }
+            combinedChart.data.labels.push(timeLabel);
+            combinedChart.data.datasets[0].data.push(pmValue);
+            combinedChart.data.datasets[1].data.push(gasValue);
+            combinedChart.update();
         }
 
-        const pmChart   = createSingleChart('pmChart', 'PM 2.5', '#ea580c', 'rgba(234, 88, 12, 0.1)');
-        const gasChart  = createSingleChart('gasChart', 'แก๊ส', '#059669', 'rgba(5, 150, 105, 0.1)');
-        const tempChart = createSingleChart('tempChart', 'อุณหภูมิ', '#2563eb', 'rgba(37, 99, 235, 0.1)');
-
-        function pushDataToChart(chart, timeLabel, value) {
-            if (chart.data.labels.length >= 10) {
-                chart.data.labels.shift();
-                chart.data.datasets[0].data.shift();
+        function pushTempData(timeLabel, tempValue) {
+            if (tempChart.data.labels.length >= 15) {
+                tempChart.data.labels.shift();
+                tempChart.data.datasets[0].data.shift();
             }
-            chart.data.labels.push(timeLabel);
-            chart.data.datasets[0].data.push(value);
-            chart.update();
+            tempChart.data.labels.push(timeLabel);
+            tempChart.data.datasets[0].data.push(tempValue);
+            tempChart.update();
         }
 
         function showAlertModal() {
@@ -228,8 +275,6 @@
 
         function addDetectionLog(data, fullDateTimeStr) {
             totalDetections++;
-            
-            // 💾 เซฟตัวเลขสะสมลงเครื่องทันทีที่บอร์ดตรวจเจอ
             localStorage.setItem('totalDetections', totalDetections);
             document.getElementById('detection-count').innerText = totalDetections;
 
@@ -249,7 +294,7 @@
                     </div>
                 </div>
                 <div class='flex gap-2 font-bold'>
-                    <span class='px-2 py-1 bg-orange-100 text-orange-700 rounded-lg'>PM: ${data.pm25}</span>
+                    <span class='px-2 py-1 bg-sky-100 text-sky-700 rounded-lg'>PM: ${data.pm25}</span>
                     <span class='px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg'>Gas: ${data.gas}</span>
                     <span class='px-2 py-1 bg-blue-100 text-blue-700 rounded-lg'>Temp: ${data.temp}°C</span>
                 </div>
@@ -276,7 +321,7 @@
 
                     document.getElementById('updated-time').innerText = fullDateTimeStr;
 
-                    // 🚨 เงื่อนไขตรวจพบบุหรี่ไฟฟ้า (PM2.5 >= 150 และ แก๊ส >= 1500)
+                    // 🚨 เงื่อนไขตรวจพบบุหรี่ไฟฟ้า
                     if (data.pm25 >= 150 && data.gas >= 1500) {
                         txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
                         pill.style.background = '#7f1d1d';
@@ -308,9 +353,9 @@
                         }
                     }
 
-                    pushDataToChart(pmChart, timeStr, data.pm25);
-                    pushDataToChart(gasChart, timeStr, data.gas);
-                    pushDataToChart(tempChart, timeStr, data.temp);
+                    // อัปเดตข้อมูลลงกราฟ
+                    pushCombinedData(timeStr, data.pm25, data.gas);
+                    pushTempData(timeStr, data.temp);
                 })
                 .catch(err => {
                     console.error(err);
