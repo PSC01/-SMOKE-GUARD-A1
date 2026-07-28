@@ -56,7 +56,7 @@
     <script>
         function updateData() {
             // IP บนบอร์ด ESP32
-            fetch('http:///data') 
+            fetch('http://172.20.10.4/data') 
                 .then(res => res.json())
                 .then(data => {
                     document.getElementById('pm-value').innerText = data.pm25;
