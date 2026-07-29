@@ -97,7 +97,7 @@
 
                 <div class='space-y-3 max-h-60 overflow-y-auto pr-1' id='detection-log-list'>
                     <div id='empty-log' class='text-center py-6 text-slate-400 text-xs font-semibold'>
-                         ยังไม่มีประวัติในรอบนี้
+                        ยังไม่มีประวัติในรอบนี้
                     </div>
                 </div>
             </section>
@@ -305,7 +305,7 @@
     // ตัวแปรเก็บค่าล่าสุดไว้พล็อตลงกราฟ
     let latestData = null;
 
-    // ⚡ 1. อัปเดตเฉพาะตัวเลขและสถานะแบบ Real-time ทุก 1 วินาที (ไม่มีการสั่งวาดกราฟในนี้)
+    // ⚡ 1. อัปเดตเฉพาะตัวเลขและสถานะแบบ Real-time ทุก 1 วินาที
     function updateRealtimeData() {
         fetch(`http://${ESP32_IP}/data`) 
             .then(res => res.json())
@@ -327,8 +327,8 @@
 
                 document.getElementById('updated-time').innerText = fullDateTimeStr;
 
-                // ตรวจจับเหตุการณ์
-                if (data.pm25 >= 150 && data.gas >= 1500) {
+                // ตรวจจับเหตุการณ์ (ปรับเกณฑ์ PM2.5 เป็น >= 300)
+                if (data.pm25 >= 300 && data.gas >= 1500) {
                     txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
                     pill.style.background = '#7f1d1d';
                     pill.style.color = '#ffffff';
@@ -344,7 +344,7 @@
                     alertDismissed = false;
                     document.getElementById('alert-modal').classList.add('hidden');
 
-                    if (data.pm25 >= 150) {
+                    if (data.pm25 >= 300) {
                         txt.innerText = '⚠️ คุณภาพอากาศอันตราย';
                         pill.style.background = '#ffe3e5'; 
                         pill.style.color = '#dd3445';
