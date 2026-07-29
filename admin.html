@@ -376,8 +376,8 @@
     updateRealtimeData();
 
     // ตั้งเวลา
-    setInterval(updateRealtimeData, 1000); // อัปเดตตัวเลขการ์ดทุก 1 วินาที
-    setInterval(recordToChart, 5000);       // 👈 ปรับเป็น 5 วินาที เพื่อให้เห็นเส้นกราฟเริ่มวิ่งทันที (ถ้านึกอยากได้ทุก 5 นาทีค่อยเปลี่ยนเป็น 300000 ครับ)
+    setInterval(updateRealtimeData, 1000); 
+    setInterval(recordToChart, 60000);       
 
     lucide.createIcons();
 </script>
