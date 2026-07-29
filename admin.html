@@ -148,7 +148,7 @@
     </div>
 
     <script>
-    const ESP32_IP = '172.20.10.4';
+    const ESP32_IP = '172.20.10.4'; // ⚠️ เปลี่ยนเป็น IP ที่โชว์บนจอ LCD บอร์ดน้า
     let alertDismissed = false;
     let isCurrentlyAlerting = false; 
 
@@ -198,7 +198,7 @@
             scales: {
                 x: {
                     display: true,
-                    title: { display: true, text: 'ตัวนับเวลาทุกๆ 5 นาที', font: { size: 11, weight: 'bold' } },
+                    title: { display: true, text: 'เวลาที่บันทึก', font: { size: 11, weight: 'bold' } },
                     ticks: { font: { size: 9 } }
                 },
                 y: {
@@ -302,17 +302,17 @@
         logList.insertBefore(newLog, logList.firstChild);
     }
 
-    // ตัวแปรเก็บค่าล่าสุดไว้พล็อตลงกราฟ
+    // ตัวแปรเก็บค่าล่าสุด
     let latestData = null;
 
-    // ⚡ 1. อัปเดตเฉพาะตัวเลขและสถานะแบบ Real-time ทุก 1 วินาที
+    // ⚡ 1. ดึงข้อมูลจาก ESP32
     function updateRealtimeData() {
         fetch(`http://${ESP32_IP}/data`) 
             .then(res => res.json())
             .then(data => {
-                latestData = data; // บันทึกค่าล่าสุดไว้
+                latestData = data; 
                 
-                // อัปเดตเฉพาะตัวเลขการ์ด
+                // อัปเดตการ์ดแสดงผล
                 document.getElementById('pm-value').innerText = data.pm25;
                 document.getElementById('gas-value').innerText = data.gas;
                 document.getElementById('temp-value').innerText = data.temp;
@@ -327,8 +327,8 @@
 
                 document.getElementById('updated-time').innerText = fullDateTimeStr;
 
-                // ตรวจจับเหตุการณ์ (ปรับเกณฑ์ PM2.5 เป็น >= 300)
-                if (data.pm25 >= 300 && data.gas >= 1500) {
+                // ตรวจสอบเงื่อนไข PM2.5 >= 300 ให้ตรงตาม Flowchart
+                if (data.pm25 >= 300) {
                     txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
                     pill.style.background = '#7f1d1d';
                     pill.style.color = '#ffffff';
@@ -344,11 +344,7 @@
                     alertDismissed = false;
                     document.getElementById('alert-modal').classList.add('hidden');
 
-                    if (data.pm25 >= 300) {
-                        txt.innerText = '⚠️ คุณภาพอากาศอันตราย';
-                        pill.style.background = '#ffe3e5'; 
-                        pill.style.color = '#dd3445';
-                    } else if (data.pm25 >= 100) {
+                    if (data.pm25 >= 100) {
                         txt.innerText = '🟠 เฝ้าระวังคุณภาพอากาศ';
                         pill.style.background = '#fff1d8'; 
                         pill.style.color = '#b86d00';
@@ -360,28 +356,28 @@
                 }
             })
             .catch(err => {
-                console.error(err);
-                document.getElementById('status-text').innerText = '⏳ กำลังรอข้อมูลจากบอร์ด...';
+                console.error('Connection Error:', err);
+                document.getElementById('status-text').innerText = '⏳ กำลังรอเชื่อมต่อกับบอร์ด...';
             });
     }
 
-    // ⏱️ 2. ฟังก์ชันนี้ทำหน้าที่พล็อตข้อมูลลงกราฟเท่านั้น
+    // ⏱️ 2. วาดจุดลงบนกราฟ
     function recordToChart() {
         if (latestData) {
             const now = new Date();
-            const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+            const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             
             pushCombinedData(timeStr, latestData.pm25, latestData.gas);
             pushTempData(timeStr, latestData.temp);
         }
     }
 
-    // เริ่มต้นทำงาน
+    // เรียกเริ่มทำงานทันทีเมื่อโหลดหน้าเว็บ
     updateRealtimeData();
 
-    // ตั้งเวลาแยกกันเด็ดขาด
-    setInterval(updateRealtimeData, 1000); // ตัวเลขอัปเดตทุก 1 วินาที
-    setInterval(recordToChart, 300000);     // จุดกราฟเพิ่มเฉพาะทุกๆ 5 นาที (300,000 มิลลิวินาที)
+    // ตั้งเวลา
+    setInterval(updateRealtimeData, 1000); // อัปเดตตัวเลขการ์ดทุก 1 วินาที
+    setInterval(recordToChart, 5000);       // 👈 ปรับเป็น 5 วินาที เพื่อให้เห็นเส้นกราฟเริ่มวิ่งทันที (ถ้านึกอยากได้ทุก 5 นาทีค่อยเปลี่ยนเป็น 300000 ครับ)
 
     lucide.createIcons();
 </script>
