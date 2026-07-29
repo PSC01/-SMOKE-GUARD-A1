@@ -147,7 +147,46 @@
         </main>
     </div>
 
-    <script>
+    สามารถปรับแก้ไขเงื่อนไขการแจ้งเตือนในส่วนของ JavaScript ได้ง่ายๆ โดยเปลี่ยนจุดเช็คเงื่อนไขจาก data.pm25 >= 300 มาเป็น data.gas > 1500 ครับ
+
+จุดที่ต้องแก้ไขในโค้ด JavaScript
+ให้ค้นหาฟังก์ชัน updateRealtimeData() แล้วเปลี่ยนเงื่อนไข if-else ในส่วนตรวจเช็คค่า ดังนี้ครับ:
+
+JavaScript
+// 🔴 เดิม: ตรวจสอบ PM2.5 >= 300
+// 🟢 เปลี่ยนใหม่: ตรวจสอบ ค่า Gas > 1500
+if (data.gas > 1500) {
+    txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
+    pill.style.background = '#7f1d1d';
+    pill.style.color = '#ffffff';
+    
+    showAlertModal();
+
+    if (!isCurrentlyAlerting) {
+        addDetectionLog(data, fullDateTimeStr);
+        isCurrentlyAlerting = true;
+    }
+} else {
+    isCurrentlyAlerting = false; 
+    alertDismissed = false;
+    document.getElementById('alert-modal').classList.add('hidden');
+
+    // สามารถปรับระดับเฝ้าระวังของ Gas เพิ่มเติมได้ตามต้องการ (เช่น เกิน 1000 ให้เฝ้าระวัง)
+    if (data.gas > 1000) {
+        txt.innerText = '🟠 เฝ้าระวังคุณภาพอากาศ';
+        pill.style.background = '#fff1d8'; 
+        pill.style.color = '#b86d00';
+    } else {
+        txt.innerText = '🟢 คุณภาพอากาศปกติ';
+        pill.style.background = '#e5f8ef'; 
+        pill.style.color = '#188d58';
+    }
+}
+โค้ดส่วน <script> ทั้งหมดฉบับแก้ไขแล้ว
+สามารถคัดลอกส่วน <script> ด้านล่างนี้ไปวางแทนของเดิมในไฟล์ HTML ได้เลยครับ:
+
+HTML
+<script>
     const ESP32_IP = '172.20.10.4'; // ⚠️ เปลี่ยนเป็น IP ที่โชว์บนจอ LCD บอร์ดน้า
     let alertDismissed = false;
     let isCurrentlyAlerting = false; 
@@ -327,8 +366,8 @@
 
                 document.getElementById('updated-time').innerText = fullDateTimeStr;
 
-                // ตรวจสอบเงื่อนไข PM2.5 >= 300 ให้ตรงตาม Flowchart
-                if (data.pm25 >= 300) {
+                // ตรวจสอบเงื่อนไข Gas > 1500
+                if (data.gas > 1500) {
                     txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
                     pill.style.background = '#7f1d1d';
                     pill.style.color = '#ffffff';
@@ -344,7 +383,7 @@
                     alertDismissed = false;
                     document.getElementById('alert-modal').classList.add('hidden');
 
-                    if (data.pm25 >= 100) {
+                    if (data.gas > 1000) {
                         txt.innerText = '🟠 เฝ้าระวังคุณภาพอากาศ';
                         pill.style.background = '#fff1d8'; 
                         pill.style.color = '#b86d00';
@@ -377,7 +416,7 @@
 
     // ตั้งเวลา
     setInterval(updateRealtimeData, 1000); 
-    setInterval(recordToChart, 60000);       
+    setInterval(recordToChart, 60000);        
 
     lucide.createIcons();
 </script>
