@@ -37,9 +37,9 @@
         </header>
         
         <main class='dashboard-wrap'>
-            <section class='bg-white dashboard-panel mb-6'>
+            <section class='bg-white dashboard-panel mb-6 rounded-3xl shadow-sm border border-slate-200 overflow-hidden'>
                 <div class='p-[30px_30px_25px] text-center border-b border-slate-200 relative'>
-                    <h1 class='font-bold text-2xl m-0 flex items-center justify-center gap-2'>
+                    <h1 class='font-bold text-2xl m-0 flex items-center justify-center gap-2 text-slate-800'>
                         SMOKE GUARD A1
                     </h1>
                     <p class='text-gray-500 mt-2 mb-0 text-sm'>แผงควบคุมและเฝ้าระวังสำหรับผู้ดูแลระบบ</p>
@@ -50,22 +50,22 @@
                     </div>
                 </div>
                 
-                <section class='sensor-grid'>
-                    <article class='sensor-card bg-orange-50 p-5 rounded-2xl flex flex-col'>
+                <section class='sensor-grid p-6 grid grid-cols-1 md:grid-cols-3 gap-4'>
+                    <article class='sensor-card bg-orange-50 p-5 rounded-2xl flex flex-col border border-orange-100'>
                         <h2 class='font-bold text-slate-700 text-sm m-0'>ปริมาณฝุ่น PM 2.5</h2>
                         <p class='font-bold text-4xl text-orange-600 mt-2'><span id='pm-value'>--</span><span class='text-sm font-semibold ml-1'>µg/m³</span></p>
                     </article>
-                    <article class='sensor-card bg-emerald-50 p-5 rounded-2xl flex flex-col'>
+                    <article class='sensor-card bg-emerald-50 p-5 rounded-2xl flex flex-col border border-emerald-100'>
                         <h2 class='font-bold text-slate-700 text-sm m-0'>ความหนาแน่นแก๊ส</h2>
                         <p class='font-bold text-4xl text-emerald-600 mt-2'><span id='gas-value'>--</span></p>
                     </article>
-                    <article class='sensor-card bg-blue-50 p-5 rounded-2xl flex flex-col'>
+                    <article class='sensor-card bg-blue-50 p-5 rounded-2xl flex flex-col border border-blue-100'>
                         <h2 class='font-bold text-slate-700 text-sm m-0'>อุณหภูมิห้อง</h2>
                         <p class='font-bold text-4xl text-blue-600 mt-2'><span id='temp-value'>--</span><span class='text-sm font-semibold ml-1'>°C</span></p>
                     </article>
                 </section>
 
-                <div class='border-t border-slate-200 p-[18px_24px_23px] text-xs text-slate-500 flex justify-between items-center'>
+                <div class='border-t border-slate-200 p-[18px_24px_23px] text-xs text-slate-500 flex justify-between items-center bg-slate-50/50'>
                     <div>
                         <span>อัปเดตล่าสุด: </span><time id='updated-time'>--:--:--</time>
                     </div>
@@ -91,7 +91,7 @@
                         <span class='text-xs text-slate-500 block font-semibold'>ตรวจพบสะสม</span>
                         <span id='detection-count' class='text-2xl font-black text-red-600'>0</span>
                         <span class='text-xs font-bold text-red-600 ml-0.5'>ครั้ง</span>
-                        <button onclick="resetDetectionCount()" class="text-[10px] text-slate-400 hover:text-red-500 underline block mt-1">รีเซ็ตตัวเลข</button>
+                        <button onclick='resetDetectionCount()' class='text-[10px] text-slate-400 hover:text-red-500 underline block mt-1'>รีเซ็ตตัวเลข</button>
                     </div>
                 </div>
 
@@ -147,278 +147,239 @@
         </main>
     </div>
 
-    สามารถปรับแก้ไขเงื่อนไขการแจ้งเตือนในส่วนของ JavaScript ได้ง่ายๆ โดยเปลี่ยนจุดเช็คเงื่อนไขจาก data.pm25 >= 300 มาเป็น data.gas > 1500 ครับ
+    <script>
+        const ESP32_IP = '172.20.10.4'; // ⚠️ เปลี่ยนเป็น IP ที่โชว์บนจอ LCD บอร์ดน้า
+        let alertDismissed = false;
+        let isCurrentlyAlerting = false; 
 
-จุดที่ต้องแก้ไขในโค้ด JavaScript
-ให้ค้นหาฟังก์ชัน updateRealtimeData() แล้วเปลี่ยนเงื่อนไข if-else ในส่วนตรวจเช็คค่า ดังนี้ครับ:
-
-JavaScript
-// 🔴 เดิม: ตรวจสอบ PM2.5 >= 300
-// 🟢 เปลี่ยนใหม่: ตรวจสอบ ค่า Gas > 1500
-if (data.gas > 1500) {
-    txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
-    pill.style.background = '#7f1d1d';
-    pill.style.color = '#ffffff';
-    
-    showAlertModal();
-
-    if (!isCurrentlyAlerting) {
-        addDetectionLog(data, fullDateTimeStr);
-        isCurrentlyAlerting = true;
-    }
-} else {
-    isCurrentlyAlerting = false; 
-    alertDismissed = false;
-    document.getElementById('alert-modal').classList.add('hidden');
-
-    // สามารถปรับระดับเฝ้าระวังของ Gas เพิ่มเติมได้ตามต้องการ (เช่น เกิน 1000 ให้เฝ้าระวัง)
-    if (data.gas > 1000) {
-        txt.innerText = '🟠 เฝ้าระวังคุณภาพอากาศ';
-        pill.style.background = '#fff1d8'; 
-        pill.style.color = '#b86d00';
-    } else {
-        txt.innerText = '🟢 คุณภาพอากาศปกติ';
-        pill.style.background = '#e5f8ef'; 
-        pill.style.color = '#188d58';
-    }
-}
-โค้ดส่วน <script> ทั้งหมดฉบับแก้ไขแล้ว
-สามารถคัดลอกส่วน <script> ด้านล่างนี้ไปวางแทนของเดิมในไฟล์ HTML ได้เลยครับ:
-
-HTML
-<script>
-    const ESP32_IP = '172.20.10.4'; // ⚠️ เปลี่ยนเป็น IP ที่โชว์บนจอ LCD บอร์ดน้า
-    let alertDismissed = false;
-    let isCurrentlyAlerting = false; 
-
-    // 💾 ดึงค่าตรวจพบสะสมจาก localStorage
-    let totalDetections = parseInt(localStorage.getItem('totalDetections')) || 0;
-    document.getElementById('detection-count').innerText = totalDetections;
-
-    function resetDetectionCount() {
-        if (confirm('คุณต้องการรีเซ็ตตัวเลขการตรวจพบสะสมเป็น 0 ใช่หรือไม่?')) {
-            totalDetections = 0;
-            localStorage.setItem('totalDetections', 0);
-            document.getElementById('detection-count').innerText = 0;
-        }
-    }
-
-    // 📈 สร้างกราฟรวม (PM2.5 เส้นฟ้า + GAS เส้นเขียว)
-    const ctxCombined = document.getElementById('combinedChart').getContext('2d');
-    const combinedChart = new Chart(ctxCombined, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [
-                {
-                    label: 'สีฟ้า PM2.5',
-                    data: [],
-                    borderColor: '#38bdf8',
-                    backgroundColor: 'transparent',
-                    borderWidth: 2.5,
-                    tension: 0.2,
-                    pointRadius: 2
-                },
-                {
-                    label: 'สีเขียว GAS',
-                    data: [],
-                    borderColor: '#22c55e',
-                    backgroundColor: 'transparent',
-                    borderWidth: 2.5,
-                    tension: 0.2,
-                    pointRadius: 2
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: {
-                    display: true,
-                    title: { display: true, text: 'เวลาที่บันทึก', font: { size: 11, weight: 'bold' } },
-                    ticks: { font: { size: 9 } }
-                },
-                y: {
-                    beginAtZero: true,
-                    title: { display: true, text: 'ค่าตัวเลข', font: { size: 11, weight: 'bold' } },
-                    ticks: { font: { size: 10 } }
-                }
-            }
-        }
-    });
-
-    // 🌡️ สร้างกราฟอุณหภูมิ
-    const ctxTemp = document.getElementById('tempChart').getContext('2d');
-    const tempChart = new Chart(ctxTemp, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'อุณหภูมิ',
-                data: [],
-                borderColor: '#2563eb',
-                backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                borderWidth: 2,
-                tension: 0.3,
-                fill: true,
-                pointRadius: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { display: true, ticks: { font: { size: 9 } } },
-                y: { beginAtZero: true, ticks: { font: { size: 10 } } }
-            }
-        }
-    });
-
-    // ฟังก์ชันดันข้อมูลลงกราฟ
-    function pushCombinedData(timeLabel, pmValue, gasValue) {
-        if (combinedChart.data.labels.length >= 20) {
-            combinedChart.data.labels.shift();
-            combinedChart.data.datasets[0].data.shift();
-            combinedChart.data.datasets[1].data.shift();
-        }
-        combinedChart.data.labels.push(timeLabel);
-        combinedChart.data.datasets[0].data.push(pmValue);
-        combinedChart.data.datasets[1].data.push(gasValue);
-        combinedChart.update();
-    }
-
-    function pushTempData(timeLabel, tempValue) {
-        if (tempChart.data.labels.length >= 20) {
-            tempChart.data.labels.shift();
-            tempChart.data.datasets[0].data.shift();
-        }
-        tempChart.data.labels.push(timeLabel);
-        tempChart.data.datasets[0].data.push(tempValue);
-        tempChart.update();
-    }
-
-    function showAlertModal() {
-        if (!alertDismissed) {
-            document.getElementById('alert-modal').classList.remove('hidden');
-        }
-    }
-
-    function closeAlertModal() {
-        document.getElementById('alert-modal').classList.add('hidden');
-        alertDismissed = true;
-    }
-
-    function addDetectionLog(data, fullDateTimeStr) {
-        totalDetections++;
-        localStorage.setItem('totalDetections', totalDetections);
+        // 💾 ดึงค่าตรวจพบสะสมจาก localStorage
+        let totalDetections = parseInt(localStorage.getItem('totalDetections')) || 0;
         document.getElementById('detection-count').innerText = totalDetections;
 
-        const emptyLog = document.getElementById('empty-log');
-        if (emptyLog) emptyLog.style.display = 'none';
+        function resetDetectionCount() {
+            if (confirm('คุณต้องการรีเซ็ตตัวเลขการตรวจพบสะสมเป็น 0 ใช่หรือไม่?')) {
+                totalDetections = 0;
+                localStorage.setItem('totalDetections', 0);
+                document.getElementById('detection-count').innerText = 0;
+            }
+        }
 
-        const logList = document.getElementById('detection-log-list');
-        const newLog = document.createElement('div');
-        newLog.className = 'flex items-center justify-between p-3.5 bg-red-50/70 border border-red-100 rounded-2xl text-xs transition-all animate-fade-in';
-        
-        newLog.innerHTML = `
-            <div class='flex items-center gap-2.5'>
-                <span class='w-2 h-2 rounded-full bg-red-500 animate-ping'></span>
-                <div>
-                    <span class='font-bold text-slate-800 block'>🚨 ตรวจพบบุหรี่ไฟฟ้า</span>
-                    <span class='text-slate-500 font-medium'>🕒 ${fullDateTimeStr}</span>
-                </div>
-            </div>
-            <div class='flex gap-2 font-bold'>
-                <span class='px-2 py-1 bg-sky-100 text-sky-700 rounded-lg'>PM: ${data.pm25}</span>
-                <span class='px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg'>Gas: ${data.gas}</span>
-                <span class='px-2 py-1 bg-blue-100 text-blue-700 rounded-lg'>Temp: ${data.temp}°C</span>
-            </div>
-        `;
-
-        logList.insertBefore(newLog, logList.firstChild);
-    }
-
-    // ตัวแปรเก็บค่าล่าสุด
-    let latestData = null;
-
-    // ⚡ 1. ดึงข้อมูลจาก ESP32
-    function updateRealtimeData() {
-        fetch(`http://${ESP32_IP}/data`) 
-            .then(res => res.json())
-            .then(data => {
-                latestData = data; 
-                
-                // อัปเดตการ์ดแสดงผล
-                document.getElementById('pm-value').innerText = data.pm25;
-                document.getElementById('gas-value').innerText = data.gas;
-                document.getElementById('temp-value').innerText = data.temp;
-                
-                let pill = document.getElementById('status-pill');
-                let txt = document.getElementById('status-text');
-
-                const now = new Date();
-                const dateStr = now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-                const timeStr = now.toLocaleTimeString('th-TH');
-                const fullDateTimeStr = `${dateStr} เวลา ${timeStr} น.`;
-
-                document.getElementById('updated-time').innerText = fullDateTimeStr;
-
-                // ตรวจสอบเงื่อนไข Gas > 1500
-                if (data.gas > 1500) {
-                    txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
-                    pill.style.background = '#7f1d1d';
-                    pill.style.color = '#ffffff';
-                    
-                    showAlertModal();
-
-                    if (!isCurrentlyAlerting) {
-                        addDetectionLog(data, fullDateTimeStr);
-                        isCurrentlyAlerting = true;
+        // 📈 สร้างกราฟรวม (PM2.5 เส้นฟ้า + GAS เส้นเขียว)
+        const ctxCombined = document.getElementById('combinedChart').getContext('2d');
+        const combinedChart = new Chart(ctxCombined, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'สีฟ้า PM2.5',
+                        data: [],
+                        borderColor: '#38bdf8',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2.5,
+                        tension: 0.2,
+                        pointRadius: 2
+                    },
+                    {
+                        label: 'สีเขียว GAS',
+                        data: [],
+                        borderColor: '#22c55e',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2.5,
+                        tension: 0.2,
+                        pointRadius: 2
                     }
-                } else {
-                    isCurrentlyAlerting = false; 
-                    alertDismissed = false;
-                    document.getElementById('alert-modal').classList.add('hidden');
-
-                    if (data.gas > 1000) {
-                        txt.innerText = '🟠 เฝ้าระวังคุณภาพอากาศ';
-                        pill.style.background = '#fff1d8'; 
-                        pill.style.color = '#b86d00';
-                    } else {
-                        txt.innerText = '🟢 คุณภาพอากาศปกติ';
-                        pill.style.background = '#e5f8ef'; 
-                        pill.style.color = '#188d58';
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        display: true,
+                        title: { display: true, text: 'เวลาที่บันทึก', font: { size: 11, weight: 'bold' } },
+                        ticks: { font: { size: 9 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'ค่าตัวเลข', font: { size: 11, weight: 'bold' } },
+                        ticks: { font: { size: 10 } }
                     }
                 }
-            })
-            .catch(err => {
-                console.error('Connection Error:', err);
-                document.getElementById('status-text').innerText = '⏳ กำลังรอเชื่อมต่อกับบอร์ด...';
-            });
-    }
+            }
+        });
 
-    // ⏱️ 2. วาดจุดลงบนกราฟ
-    function recordToChart() {
-        if (latestData) {
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            
-            pushCombinedData(timeStr, latestData.pm25, latestData.gas);
-            pushTempData(timeStr, latestData.temp);
+        // 🌡️ สร้างกราฟอุณหภูมิ
+        const ctxTemp = document.getElementById('tempChart').getContext('2d');
+        const tempChart = new Chart(ctxTemp, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'อุณหภูมิ',
+                    data: [],
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: true, ticks: { font: { size: 9 } } },
+                    y: { beginAtZero: true, ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+
+        // ฟังก์ชันดันข้อมูลลงกราฟ
+        function pushCombinedData(timeLabel, pmValue, gasValue) {
+            if (combinedChart.data.labels.length >= 20) {
+                combinedChart.data.labels.shift();
+                combinedChart.data.datasets[0].data.shift();
+                combinedChart.data.datasets[1].data.shift();
+            }
+            combinedChart.data.labels.push(timeLabel);
+            combinedChart.data.datasets[0].data.push(pmValue);
+            combinedChart.data.datasets[1].data.push(gasValue);
+            combinedChart.update();
         }
-    }
 
-    // เรียกเริ่มทำงานทันทีเมื่อโหลดหน้าเว็บ
-    updateRealtimeData();
+        function pushTempData(timeLabel, tempValue) {
+            if (tempChart.data.labels.length >= 20) {
+                tempChart.data.labels.shift();
+                tempChart.data.datasets[0].data.shift();
+            }
+            tempChart.data.labels.push(timeLabel);
+            tempChart.data.datasets[0].data.push(tempValue);
+            tempChart.update();
+        }
 
-    // ตั้งเวลา
-    setInterval(updateRealtimeData, 1000); 
-    setInterval(recordToChart, 60000);        
+        function showAlertModal() {
+            if (!alertDismissed) {
+                document.getElementById('alert-modal').classList.remove('hidden');
+            }
+        }
 
-    lucide.createIcons();
-</script>
+        function closeAlertModal() {
+            document.getElementById('alert-modal').classList.add('hidden');
+            alertDismissed = true;
+        }
+
+        function addDetectionLog(data, fullDateTimeStr) {
+            totalDetections++;
+            localStorage.setItem('totalDetections', totalDetections);
+            document.getElementById('detection-count').innerText = totalDetections;
+
+            const emptyLog = document.getElementById('empty-log');
+            if (emptyLog) emptyLog.style.display = 'none';
+
+            const logList = document.getElementById('detection-log-list');
+            const newLog = document.createElement('div');
+            newLog.className = 'flex items-center justify-between p-3.5 bg-red-50/70 border border-red-100 rounded-2xl text-xs transition-all animate-fade-in';
+            
+            newLog.innerHTML = `
+                <div class='flex items-center gap-2.5'>
+                    <span class='w-2 h-2 rounded-full bg-red-500 animate-ping'></span>
+                    <div>
+                        <span class='font-bold text-slate-800 block'>🚨 ตรวจพบบุหรี่ไฟฟ้า</span>
+                        <span class='text-slate-500 font-medium'>🕒 ${fullDateTimeStr}</span>
+                    </div>
+                </div>
+                <div class='flex gap-2 font-bold'>
+                    <span class='px-2 py-1 bg-sky-100 text-sky-700 rounded-lg'>PM: ${data.pm25}</span>
+                    <span class='px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg'>Gas: ${data.gas}</span>
+                    <span class='px-2 py-1 bg-blue-100 text-blue-700 rounded-lg'>Temp: ${data.temp}°C</span>
+                </div>
+            `;
+
+            logList.insertBefore(newLog, logList.firstChild);
+        }
+
+        // ตัวแปรเก็บค่าล่าสุด
+        let latestData = null;
+
+        // ⚡ 1. ดึงข้อมูลจาก ESP32
+        function updateRealtimeData() {
+            fetch(`http://${ESP32_IP}/data`) 
+                .then(res => res.json())
+                .then(data => {
+                    latestData = data; 
+                    
+                    // อัปเดตการ์ดแสดงผล
+                    document.getElementById('pm-value').innerText = data.pm25;
+                    document.getElementById('gas-value').innerText = data.gas;
+                    document.getElementById('temp-value').innerText = data.temp;
+                    
+                    let pill = document.getElementById('status-pill');
+                    let txt = document.getElementById('status-text');
+
+                    const now = new Date();
+                    const dateStr = now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+                    const timeStr = now.toLocaleTimeString('th-TH');
+                    const fullDateTimeStr = `${dateStr} เวลา ${timeStr} น.`;
+
+                    document.getElementById('updated-time').innerText = fullDateTimeStr;
+
+                    // ตรวจสอบเงื่อนไข Gas > 1500
+                    if (data.gas > 1500) {
+                        txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
+                        pill.style.background = '#7f1d1d';
+                        pill.style.color = '#ffffff';
+                        
+                        showAlertModal();
+
+                        if (!isCurrentlyAlerting) {
+                            addDetectionLog(data, fullDateTimeStr);
+                            isCurrentlyAlerting = true;
+                        }
+                    } else {
+                        isCurrentlyAlerting = false; 
+                        alertDismissed = false;
+                        document.getElementById('alert-modal').classList.add('hidden');
+
+                        if (data.gas > 1000) {
+                            txt.innerText = '🟠 เฝ้าระวังคุณภาพอากาศ';
+                            pill.style.background = '#fff1d8'; 
+                            pill.style.color = '#b86d00';
+                        } else {
+                            txt.innerText = '🟢 คุณภาพอากาศปกติ';
+                            pill.style.background = '#e5f8ef'; 
+                            pill.style.color = '#188d58';
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('Connection Error:', err);
+                    document.getElementById('status-text').innerText = '⏳ กำลังรอเชื่อมต่อกับบอร์ด...';
+                });
+        }
+
+        // ⏱️ 2. วาดจุดลงบนกราฟ
+        function recordToChart() {
+            if (latestData) {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                
+                pushCombinedData(timeStr, latestData.pm25, latestData.gas);
+                pushTempData(timeStr, latestData.temp);
+            }
+        }
+
+        // เรียกเริ่มทำงานทันทีเมื่อโหลดหน้าเว็บ
+        updateRealtimeData();
+
+        // ตั้งเวลาอัปเดตข้อมูลทุก 1 วิ และลงกราฟทุก 5 วิ
+        setInterval(updateRealtimeData, 1000); 
+        setInterval(recordToChart, 5000);        
+
+        lucide.createIcons();
+    </script>
 </body>
 </html>
