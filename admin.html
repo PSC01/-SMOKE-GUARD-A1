@@ -69,9 +69,9 @@
                     <div>
                         <span>อัปเดตล่าสุด: </span><time id='updated-time'>--:--:--</time>
                     </div>
-                    <div class='flex items-center gap-1 text-emerald-600 font-semibold'>
-                        <span class='w-2 h-2 rounded-full bg-emerald-500 animate-ping'></span>
-                        <span>เชื่อมต่อบอร์ดแล้ว</span>
+                    <div id='connection-pill' class='flex items-center gap-1.5 text-slate-400 font-semibold'>
+                        <span id='connection-dot' class='w-2.5 h-2.5 rounded-full bg-slate-400'></span>
+                        <span id='connection-text'>กำลังเชื่อมต่อ...</span>
                     </div>
                 </div>
             </section>
@@ -148,7 +148,7 @@
     </div>
 
     <script>
-        const ESP32_IP = '172.20.10.4'; // ⚠️ เปลี่ยนเป็น IP ที่โชว์บนจอ LCD บอร์ดน้า
+        const ESP32_IP = '172.20.10.4'; // ⚠️ เปลี่ยนเป็น IP ของ ESP32 ที่โชว์บนจอ LCD
         let alertDismissed = false;
         let isCurrentlyAlerting = false; 
 
@@ -164,7 +164,7 @@
             }
         }
 
-        // 📈 สร้างกราฟรวม (PM2.5 เส้นฟ้า + GAS เส้นเขียว)
+        // 📈 กราฟรวม (PM2.5 + Gas)
         const ctxCombined = document.getElementById('combinedChart').getContext('2d');
         const combinedChart = new Chart(ctxCombined, {
             type: 'line',
@@ -210,7 +210,7 @@
             }
         });
 
-        // 🌡️ สร้างกราฟอุณหภูมิ
+        // 🌡️ กราฟอุณหภูมิ
         const ctxTemp = document.getElementById('tempChart').getContext('2d');
         const tempChart = new Chart(ctxTemp, {
             type: 'line',
@@ -238,7 +238,6 @@
             }
         });
 
-        // ฟังก์ชันดันข้อมูลลงกราฟ
         function pushCombinedData(timeLabel, pmValue, gasValue) {
             if (combinedChart.data.labels.length >= 20) {
                 combinedChart.data.labels.shift();
@@ -302,17 +301,28 @@
             logList.insertBefore(newLog, logList.firstChild);
         }
 
-        // ตัวแปรเก็บค่าล่าสุด
         let latestData = null;
 
-        // ⚡ 1. ดึงข้อมูลจาก ESP32
+        // ⚡ 1. ดึงข้อมูลจาก ESP32 + ตรวจจับสถานะเชื่อมต่อ
         function updateRealtimeData() {
             fetch(`http://${ESP32_IP}/data`) 
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) throw new Error("Network response error");
+                    return res.json();
+                })
                 .then(data => {
                     latestData = data; 
                     
-                    // อัปเดตการ์ดแสดงผล
+                    // 🟢 อัปเดตไฟสถานะการเชื่อมต่อมุมขวาล่าง
+                    const connDot = document.getElementById('connection-dot');
+                    const connText = document.getElementById('connection-text');
+                    const connPill = document.getElementById('connection-pill');
+                    
+                    connPill.className = 'flex items-center gap-1.5 text-emerald-600 font-semibold';
+                    connDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping';
+                    connText.innerText = 'เชื่อมต่อบอร์ดแล้ว';
+
+                    // อัปเดตค่าเซนเซอร์
                     document.getElementById('pm-value').innerText = data.pm25;
                     document.getElementById('gas-value').innerText = data.gas;
                     document.getElementById('temp-value').innerText = data.temp;
@@ -327,7 +337,7 @@
 
                     document.getElementById('updated-time').innerText = fullDateTimeStr;
 
-                    // ตรวจสอบเงื่อนไข Gas > 1500
+                    // เงื่อนไขแจ้งเตือน Gas > 1500
                     if (data.gas > 1500) {
                         txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
                         pill.style.background = '#7f1d1d';
@@ -357,6 +367,16 @@
                 })
                 .catch(err => {
                     console.error('Connection Error:', err);
+                    
+                    // 🔴 อัปเดตไฟสถานะการเชื่อมต่อเป็นขาดการเชื่อมต่อ
+                    const connDot = document.getElementById('connection-dot');
+                    const connText = document.getElementById('connection-text');
+                    const connPill = document.getElementById('connection-pill');
+                    
+                    connPill.className = 'flex items-center gap-1.5 text-red-500 font-semibold';
+                    connDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500';
+                    connText.innerText = 'ขาดการเชื่อมต่อ';
+
                     document.getElementById('status-text').innerText = '⏳ กำลังรอเชื่อมต่อกับบอร์ด...';
                 });
         }
@@ -372,10 +392,8 @@
             }
         }
 
-        // เรียกเริ่มทำงานทันทีเมื่อโหลดหน้าเว็บ
         updateRealtimeData();
 
-        // ตั้งเวลาอัปเดตข้อมูลทุก 1 วิ และลงกราฟทุก 5 วิ
         setInterval(updateRealtimeData, 1000); 
         setInterval(recordToChart, 5000);        
 
