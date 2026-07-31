@@ -107,6 +107,6 @@
                     let pill = document.getElementById('status-pill');
                     let txt = document.getElementById('status-text');
 
-                    // 🚨 1. เงื่อนไขตรวจพบบุหรี่ไฟฟ้า (Gas > 1500 หรือ PM2.5 >= 300)
-                    if (data.gas > 1500 || data.pm25 >= 300) {
+                    // 🚨 1. เงื่อนไขตรวจพบบุหรี่ไฟฟ้า (Gas > 1200 หรือ PM2.5 >= 300)
+                    if (data.gas > 1200 || data.pm25 >= 300) {
                         txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
