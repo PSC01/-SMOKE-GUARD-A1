@@ -13,21 +13,6 @@ const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbw9_RqA2wLk_j3
 let latestData = { pm25: 0, gas: 0, temp: 0, time: "" };
 let history = [];
 
-// 📩 Webhook สำหรับดักเอา Group ID จาก LINE
-app.post('/webhook', (req, res) => {
-    const events = req.body.events;
-    if (events && events.length > 0) {
-        events.forEach(event => {
-            if (event.source && event.source.groupId) {
-                console.log("==========================================");
-                console.log("📌 เจอ Group ID แล้วคือ:", event.source.groupId);
-                console.log("==========================================");
-            }
-        });
-    }
-    res.status(200).send('OK');
-});
-
 // API รับค่าจาก ESP32
 app.post('/api/sensor', async (req, res) => {
     const { pm25, gas, temp } = req.body;
