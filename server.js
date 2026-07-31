@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ⚠️ วาง URL ของ Google Apps Script Web App ของน้าตรงนี้
+// ⚠️ URL ของ Google Apps Script Web App สำหรับบันทึกลง Google Sheets
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbw9_RqA2wLk_j3sre8LDeYSki7kKRzU8DMb-Y7oD80iaGKgSWfJfO-FsrDK2tRxITXB/exec';
 
 let latestData = { pm25: 0, gas: 0, temp: 0, time: "" };
@@ -23,11 +23,11 @@ app.post('/api/sensor', async (req, res) => {
     history.push(latestData);
     if (history.length > 20) history.shift();
 
-    // 1. ส่งข้อมูลไปบันทึกลลง Google Sheets
+    // 1. ส่งข้อมูลไปบันทึกลง Google Sheets
     saveToGoogleSheet(latestData);
 
-    // 2. ตรวจพบบุหรี่ไฟฟ้า -> ยิง LINE
-    if (gas > 1500 || pm25 >= 300) {
+    // 2. ตรวจพบบุหรี่ไฟฟ้า -> ยิง LINE (ปรับแก๊สเป็น > 1200)
+    if (gas > 1200 || pm25 >= 300) {
         sendLineNotification(latestData);
     }
 
