@@ -148,8 +148,8 @@
     </div>
 
     <script>
-    // 🔗 URL Apps Script ตัวใหม่
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw9_RqA2wLk_j3sre8LDeYSki7kKRzU8DMb-Y7oD80iaGKgSWfJfO-FsrDK2tRxITXB/exec'; 
+    // 🔗 เปลี่ยนจุดดึงข้อมูลมาที่ Node.js บน Render
+    const RENDER_API_URL = 'https://smoke-guard-a1.onrender.com/api/data'; 
     
     let alertDismissed = false;
     let isCurrentlyAlerting = false; 
@@ -305,17 +305,19 @@
 
     let latestData = null;
 
-    // ⚡ 1. ดึงข้อมูลจาก Google Sheets (Cloud Web App)
+    // ⚡ 1. ดึงข้อมูลจาก Node.js Server (Render)
     function updateRealtimeData() {
-        fetch(GOOGLE_SCRIPT_URL) 
+        fetch(RENDER_API_URL) 
             .then(res => {
                 if (!res.ok) throw new Error("Network response error");
                 return res.json();
             })
-            .then(data => {
+            .then(resData => {
+                // ดึงค่า latest จากโครงสร้างข้อมูลใหม่ของ Node.js ({ latest, history })
+                const data = resData.latest || { pm25: 0, gas: 0, temp: 0, time: "" };
                 latestData = data; 
                 
-                // 🟢 อัปเดตไฟสถานะการเชื่อมต่อมุมขวาล่าง
+                // 🟢 อัปเดตไฟสถานะการเชื่อมต่อ
                 const connDot = document.getElementById('connection-dot');
                 const connText = document.getElementById('connection-text');
                 const connPill = document.getElementById('connection-pill');
@@ -325,16 +327,16 @@
                 connText.innerText = 'เชื่อมต่อ Cloud แล้ว';
 
                 // อัปเดตค่าเซนเซอร์
-                document.getElementById('pm-value').innerText = data.pm25;
-                document.getElementById('gas-value').innerText = data.gas;
-                document.getElementById('temp-value').innerText = data.temp;
+                document.getElementById('pm-value').innerText = data.pm25 ?? '--';
+                document.getElementById('gas-value').innerText = data.gas ?? '--';
+                document.getElementById('temp-value').innerText = data.temp ?? '--';
                 
                 let pill = document.getElementById('status-pill');
                 let txt = document.getElementById('status-text');
 
                 const now = new Date();
                 const dateStr = now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-                const timeStr = now.toLocaleTimeString('th-TH');
+                const timeStr = data.time || now.toLocaleTimeString('th-TH');
                 const fullDateTimeStr = `${dateStr} เวลา ${timeStr} น.`;
 
                 document.getElementById('updated-time').innerText = fullDateTimeStr;
@@ -385,9 +387,9 @@
 
     // ⏱️ 2. วาดจุดลงบนกราฟ
     function recordToChart() {
-        if (latestData) {
+        if (latestData && (latestData.pm25 > 0 || latestData.gas > 0)) {
             const now = new Date();
-            const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const timeStr = latestData.time || now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             
             pushCombinedData(timeStr, latestData.pm25, latestData.gas);
             pushTempData(timeStr, latestData.temp);
@@ -396,7 +398,7 @@
 
     updateRealtimeData();
 
-    // ดึงข้อมูลจาก Google Sheets ทุกๆ 3 วินาที
+    // ดึงข้อมูลจาก Node.js บน Render ทุกๆ 3 วินาที
     setInterval(updateRealtimeData, 3000); 
     // อัปเดตกราฟทุกๆ 30 วินาที
     setInterval(recordToChart, 30000);        
