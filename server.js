@@ -7,6 +7,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ⚠️ วาง URL ของ Google Apps Script Web App ของน้าตรงนี้
+const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbw9_RqA2wLk_j3sre8LDeYSki7kKRzU8DMb-Y7oD80iaGKgSWfJfO-FsrDK2tRxITXB/exec';
+
 let latestData = { pm25: 0, gas: 0, temp: 0, time: "" };
 let history = [];
 
@@ -20,7 +23,10 @@ app.post('/api/sensor', async (req, res) => {
     history.push(latestData);
     if (history.length > 20) history.shift();
 
-    // ตรวจพบบุหรี่ไฟฟ้า -> ยิง LINE
+    // 1. ส่งข้อมูลไปบันทึกลลง Google Sheets
+    saveToGoogleSheet(latestData);
+
+    // 2. ตรวจพบบุหรี่ไฟฟ้า -> ยิง LINE
     if (gas > 1500 || pm25 >= 300) {
         sendLineNotification(latestData);
     }
@@ -33,6 +39,18 @@ app.get('/api/data', (req, res) => {
     res.json({ latest: latestData, history: history });
 });
 
+// ฟังก์ชันส่งข้อมูลลง Google Sheets
+async function saveToGoogleSheet(data) {
+    if (!GOOGLE_SHEET_URL) return;
+    try {
+        await axios.post(GOOGLE_SHEET_URL, data);
+        console.log("บันทึกลง Google Sheet เรียบร้อย");
+    } catch (err) {
+        console.error("Save to Sheet Error:", err.message);
+    }
+}
+
+// ฟังก์ชันยิง LINE Notification
 async function sendLineNotification(data) {
     const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
     const userId = process.env.LINE_TARGET_ID;
