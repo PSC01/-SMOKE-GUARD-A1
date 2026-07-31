@@ -7,11 +7,26 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ⚠️ URL ของ Google Apps Script Web App สำหรับบันทึกลง Google Sheets
+// ⚠️ URL ของ Google Apps Script Web App
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbw9_RqA2wLk_j3sre8LDeYSki7kKRzU8DMb-Y7oD80iaGKgSWfJfO-FsrDK2tRxITXB/exec';
 
 let latestData = { pm25: 0, gas: 0, temp: 0, time: "" };
 let history = [];
+
+// 📩 Webhook สำหรับดักเอา Group ID จาก LINE
+app.post('/webhook', (req, res) => {
+    const events = req.body.events;
+    if (events && events.length > 0) {
+        events.forEach(event => {
+            if (event.source && event.source.groupId) {
+                console.log("==========================================");
+                console.log("📌 เจอ Group ID แล้วคือ:", event.source.groupId);
+                console.log("==========================================");
+            }
+        });
+    }
+    res.status(200).send('OK');
+});
 
 // API รับค่าจาก ESP32
 app.post('/api/sensor', async (req, res) => {
@@ -26,7 +41,7 @@ app.post('/api/sensor', async (req, res) => {
     // 1. ส่งข้อมูลไปบันทึกลง Google Sheets
     saveToGoogleSheet(latestData);
 
-    // 2. ตรวจพบบุหรี่ไฟฟ้า -> ยิง LINE (ปรับแก๊สเป็น > 1200)
+    // 2. ตรวจพบบุหรี่ไฟฟ้า -> ยิง LINE (Gas > 1200 หรือ PM2.5 >= 300)
     if (gas > 1200 || pm25 >= 300) {
         sendLineNotification(latestData);
     }
