@@ -76,17 +76,20 @@
     </div>
 
     <script>
-        // 🔗 URL Google Apps Script Web App
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw9_RqA2wLk_j3sre8LDeYSki7kKRzU8DMb-Y7oD80iaGKgSWfJfO-FsrDK2tRxITXB/exec'; 
+        // 🔗 URL Node.js Server บน Render
+        const RENDER_API_URL = 'https://smoke-guard-a1.onrender.com/api/data'; 
 
         function updateData() {
-            // ดึงข้อมูลผ่าน Cloud (Google Sheets Apps Script)
-            fetch(GOOGLE_SCRIPT_URL) 
+            // ดึงข้อมูลผ่าน Render API
+            fetch(RENDER_API_URL) 
                 .then(res => {
                     if (!res.ok) throw new Error("Network response error");
                     return res.json();
                 })
-                .then(data => {
+                .then(resData => {
+                    // ดึงเฉพาะวัตถุ latest จาก Node.js
+                    const data = resData.latest || { pm25: 0, gas: 0, temp: 0, time: "" };
+
                     // 🟢 อัปเดตไฟสถานะการเชื่อมต่อ
                     const connDot = document.getElementById('connection-dot');
                     const connText = document.getElementById('connection-text');
@@ -97,9 +100,9 @@
                     connText.innerText = 'เชื่อมต่อ Cloud แล้ว';
 
                     // อัปเดตค่าเซนเซอร์
-                    document.getElementById('pm-value').innerText = data.pm25;
-                    document.getElementById('gas-value').innerText = data.gas;
-                    document.getElementById('temp-value').innerText = data.temp;
+                    document.getElementById('pm-value').innerText = data.pm25 ?? '--';
+                    document.getElementById('gas-value').innerText = data.gas ?? '--';
+                    document.getElementById('temp-value').innerText = data.temp ?? '--';
                     
                     let pill = document.getElementById('status-pill');
                     let txt = document.getElementById('status-text');
@@ -107,53 +110,3 @@
                     // 🚨 1. เงื่อนไขตรวจพบบุหรี่ไฟฟ้า (Gas > 1500 หรือ PM2.5 >= 300)
                     if (data.gas > 1500 || data.pm25 >= 300) {
                         txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
-                        pill.style.background = '#7f1d1d'; // สีแดงเข้ม
-                        pill.style.color = '#ffffff';      // ตัวหนังสือสีขาว
-                    } 
-                    // 🟠 2. ค่าเฝ้าระวังคุณภาพอากาศ (Gas > 1000 หรือ PM2.5 > 150)
-                    else if (data.gas > 1000 || data.pm25 > 150) {
-                        txt.innerText = '🟠 เฝ้าระวังคุณภาพอากาศ';
-                        pill.style.background = '#fff1d8'; 
-                        pill.style.color = '#b86d00';
-                    } 
-                    // 🟢 3. คุณภาพอากาศปกติ
-                    else {
-                        txt.innerText = '🟢 คุณภาพอากาศปกติ';
-                        pill.style.background = '#e5f8ef'; 
-                        pill.style.color = '#188d58';
-                    }
-
-                    // 🕒 แสดงผลวันที่และเวลาปัจจุบันแบบไทย
-                    const now = new Date();
-                    const dateStr = now.toLocaleDateString('th-TH', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                    });
-                    const timeStr = now.toLocaleTimeString('th-TH');
-
-                    document.getElementById('updated-time').innerText = `${dateStr} เวลา ${timeStr} น.`;
-                })
-                .catch(err => {
-                    console.error('Connection Error:', err);
-                    
-                    // 🔴 อัปเดตไฟสถานะเป็นขาดการเชื่อมต่อ
-                    const connDot = document.getElementById('connection-dot');
-                    const connText = document.getElementById('connection-text');
-                    const connPill = document.getElementById('connection-pill');
-                    
-                    connPill.className = 'flex items-center gap-1.5 text-red-500 font-semibold';
-                    connDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500';
-                    connText.innerText = 'ขาดการเชื่อมต่อ Cloud';
-
-                    document.getElementById('status-text').innerText = '⏳ กำลังรอเชื่อมต่อกับ Cloud...';
-                });
-        }
-
-        updateData();
-        // ตั้งเวลาดึงค่าทุกๆ 3 วินาที (เพื่อไม่ให้ถี่เกินไปตาม Rate Limit ของ Google)
-        setInterval(updateData, 3000);
-        lucide.createIcons();
-    </script>
-</body>
-</html>
