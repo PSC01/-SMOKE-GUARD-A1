@@ -341,8 +341,8 @@
 
                 document.getElementById('updated-time').innerText = fullDateTimeStr;
 
-                // เงื่อนไขแจ้งเตือน Gas > 1500 หรือ PM2.5 >= 300
-                if (data.gas > 1500 || data.pm25 >= 300) {
+                // เงื่อนไขแจ้งเตือน Gas > 1200 หรือ PM2.5 >= 300
+                if (data.gas > 1200 || data.pm25 >= 300) {
                     txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
                     pill.style.background = '#7f1d1d';
                     pill.style.color = '#ffffff';
