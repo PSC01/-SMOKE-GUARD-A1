@@ -341,8 +341,8 @@
 
                 document.getElementById('updated-time').innerText = fullDateTimeStr;
 
-                // เงื่อนไขแจ้งเตือน Gas > 1200 หรือ PM2.5 >= 300
-                if (data.gas > 1200 || data.pm25 >= 300) {
+                // เงื่อนไขแจ้งเตือน Gas > 1200 หรือ PM2.5 > 300
+                if (data.gas > 1200 || data.pm25 > 300) {
                     txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
                     pill.style.background = '#7f1d1d';
                     pill.style.color = '#ffffff';
@@ -358,7 +358,7 @@
                     alertDismissed = false;
                     document.getElementById('alert-modal').classList.add('hidden');
 
-                    if (data.gas > 1000 || data.pm25 > 150) {
+                    if (data.pm25 > 75) {
                         txt.innerText = '🟠 เฝ้าระวังคุณภาพอากาศ';
                         pill.style.background = '#fff1d8'; 
                         pill.style.color = '#b86d00';
