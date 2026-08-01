@@ -8,7 +8,7 @@ app.use(cors());
 app.use(express.json());
 
 // ⚠️ URL ของ Google Apps Script Web App
-const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbw9_RqA2wLk_j3sre8LDeYSki7kKRzU8DMb-Y7oD80iaGKgSWfJfO-FsrDK2tRxITXB/exec';
+const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbz959K1zMBctZm45I6EF5R4wLRvsBBkuJrsCN5Fc8LH6dzFaFTW8tWISTsx00g1-Sso/exec';
 
 let latestData = { pm25: 0, gas: 0, temp: 0, time: "" };
 
