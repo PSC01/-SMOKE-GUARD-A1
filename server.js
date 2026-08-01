@@ -22,7 +22,7 @@ app.post('/api/sensor', async (req, res) => {
     // 1.1 ส่งข้อมูลไปบันทึกลง Google Sheets
     saveToGoogleSheet(latestData);
 
-    // 1.2 ตรวจพบบุหรี่ไฟฟ้า -> ยิง LINE (Gas > 1200 หรือ PM2.5 >= 300)
+    // 1.2 ตรวจพบสภาวะเสี่ยง -> ยิง LINE (Gas > 1200 หรือ PM2.5 >= 300)
     if (gas > 1200 || pm25 >= 300) {
         sendLineNotification(latestData);
     }
@@ -59,12 +59,32 @@ async function saveToGoogleSheet(data) {
     }
 }
 
-// ฟังก์ชันดึงประวัติตรวจพบจาก Google Sheets
+// ฟังก์ชันดึงประวัติตรวจพบจาก Google Sheets (พร้อมกรอง Cooldown 5 นาที)
 async function getHistoryFromGoogleSheet() {
     if (!GOOGLE_SHEET_URL) return [];
     try {
         const response = await axios.get(GOOGLE_SHEET_URL);
-        return Array.isArray(response.data) ? response.data : [];
+        const allData = Array.isArray(response.data) ? response.data : [];
+        
+        let alertHistory = [];
+        let lastAlertTime = 0;
+
+        allData.forEach(row => {
+            const pm25Val = Number(row.pm25) || 0;
+            const gasVal = Number(row.gas) || 0;
+            const currentTimeMs = row.timestamp || 0;
+
+            // เงื่อนไขตรวจพบภัย
+            if (gasVal > 1200 || pm25Val >= 300) {
+                if (lastAlertTime === 0 || (currentTimeMs - lastAlertTime) >= 300000) {
+                    alertHistory.push(row);
+                    lastAlertTime = currentTimeMs;
+                }
+            }
+        });
+
+        // เอาประวัติรายการใหม่อยู่บนสุด
+        return alertHistory.reverse();
     } catch (err) {
         console.error("Get Sheet History Error:", err.message);
         return [];
@@ -97,7 +117,7 @@ async function sendLineNotification(data) {
             to: userId,
             messages: [{
                 type: "text",
-                text: `🚨 [SMOKE GUARD A1] ตรวจพบบุหรี่ไฟฟ้า!\n💨 PM2.5: ${data.pm25} µg/m³\n🧪 Gas: ${data.gas}\n🌡️ Temp: ${data.temp} °C\n🕒 เวลา: ${data.time}`
+                text: `🚨 [SMOKE GUARD A1] ตรวจพบสภาวะเสี่ยง!\n💨 PM2.5: ${data.pm25} µg/m³\n🧪 Gas: ${data.gas}\n🌡️ Temp: ${data.temp} °C\n🕒 เวลา: ${data.time}`
             }]
         }, {
             headers: {
