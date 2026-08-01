@@ -11,22 +11,18 @@ app.use(express.json());
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbw9_RqA2wLk_j3sre8LDeYSki7kKRzU8DMb-Y7oD80iaGKgSWfJfO-FsrDK2tRxITXB/exec';
 
 let latestData = { pm25: 0, gas: 0, temp: 0, time: "" };
-let history = [];
 
-// API รับค่าจาก ESP32
+// 📩 1. API รับค่าจาก ESP32
 app.post('/api/sensor', async (req, res) => {
     const { pm25, gas, temp } = req.body;
     const now = new Date().toLocaleTimeString('th-TH');
     
     latestData = { pm25, gas, temp, time: now };
-    
-    history.push(latestData);
-    if (history.length > 20) history.shift();
 
-    // 1. ส่งข้อมูลไปบันทึกลง Google Sheets
+    // 1.1 ส่งข้อมูลไปบันทึกลง Google Sheets
     saveToGoogleSheet(latestData);
 
-    // 2. ตรวจพบบุหรี่ไฟฟ้า -> ยิง LINE (Gas > 1200 หรือ PM2.5 >= 300)
+    // 1.2 ตรวจพบบุหรี่ไฟฟ้า -> ยิง LINE (Gas > 1200 หรือ PM2.5 >= 300)
     if (gas > 1200 || pm25 >= 300) {
         sendLineNotification(latestData);
     }
@@ -34,10 +30,18 @@ app.post('/api/sensor', async (req, res) => {
     res.status(200).json({ status: "Success" });
 });
 
-// API สำหรับ Dashboard
-app.get('/api/data', (req, res) => {
-    res.json({ latest: latestData, history: history });
+// 🌐 2. API สำหรับ Dashboard (ดึงค่าล่าสุด + ประวัติตรวจพบจาก Google Sheets)
+app.get('/api/data', async (req, res) => {
+    const alertHistory = await getHistoryFromGoogleSheet();
+    res.json({ 
+        latest: latestData, 
+        history: alertHistory 
+    });
 });
+
+// -------------------------------------------------------------
+// 🛠️ Helper Functions
+// -------------------------------------------------------------
 
 // ฟังก์ชันส่งข้อมูลลง Google Sheets
 async function saveToGoogleSheet(data) {
@@ -47,6 +51,18 @@ async function saveToGoogleSheet(data) {
         console.log("บันทึกลง Google Sheet เรียบร้อย");
     } catch (err) {
         console.error("Save to Sheet Error:", err.message);
+    }
+}
+
+// ฟังก์ชันดึงประวัติตรวจพบจาก Google Sheets (ที่มี Cooldown 5 นาทีแล้ว)
+async function getHistoryFromGoogleSheet() {
+    if (!GOOGLE_SHEET_URL) return [];
+    try {
+        const response = await axios.get(GOOGLE_SHEET_URL);
+        return response.data; // ได้ Array ประวัติย้อนหลังที่กรองแล้ว
+    } catch (err) {
+        console.error("Get Sheet History Error:", err.message);
+        return [];
     }
 }
 
