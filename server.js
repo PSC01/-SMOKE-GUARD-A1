@@ -22,8 +22,8 @@ app.post('/api/sensor', async (req, res) => {
     // 1.1 ส่งข้อมูลไปบันทึกลง Google Sheets
     saveToGoogleSheet(latestData);
 
-    // 1.2 ตรวจพบสภาวะเสี่ยง -> ยิง LINE (Gas > 1200 หรือ PM2.5 >= 300)
-    if (gas > 1200 || pm25 >= 300) {
+    // 1.2 ตรวจพบสภาวะเสี่ยง -> ยิง LINE (Gas > 1200 และ PM2.5 >= 300 พร้อมกัน)
+    if (gas > 1200 && pm25 >= 300) {
         sendLineNotification(latestData);
     }
 
@@ -48,7 +48,7 @@ app.get('/api/data', async (req, res) => {
 // 🛠️ Helper Functions
 // -------------------------------------------------------------
 
-// 🛠️ ฟังก์ชันส่งข้อมูลลง Google Sheets (ปรับเป็น GET พารามิเตอร์แก้ปัญหา Redirect)
+// 🛠️ ฟังก์ชันส่งข้อมูลลง Google Sheets
 async function saveToGoogleSheet(data) {
     if (!GOOGLE_SHEET_URL) return;
     try {
@@ -75,8 +75,8 @@ async function getHistoryFromGoogleSheet() {
             const gasVal = Number(row.gas) || 0;
             const currentTimeMs = row.timestamp || 0;
 
-            // เงื่อนไขตรวจพบภัย
-            if (gasVal > 1200 || pm25Val >= 300) {
+            // 🟢 แก้ไขเงื่อนไข: ต้องเกินทั้ง Gas (>1200) และ PM2.5 (>=300) พร้อมกันเท่านั้น
+            if (gasVal > 1200 && pm25Val >= 300) {
                 if (lastAlertTime === 0 || (currentTimeMs - lastAlertTime) >= 300000) {
                     alertHistory.push(row);
                     lastAlertTime = currentTimeMs;
