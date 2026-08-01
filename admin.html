@@ -103,7 +103,7 @@
 
             <section class='bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex flex-col gap-6'>
                 <h3 class='font-bold text-base text-slate-800 flex items-center gap-2 border-b pb-3'>
-                    <i data-lucide='line-chart' width='18' height='18'></i> กราฟแนวโน้มคุณภาพอากาศ
+                    <i data-lucide='line-chart' width='18' height='18'></i> กราฟแนวโน้มคุณภาพอากาศ (20 ค่าล่าสุดจาก Google Sheets)
                 </h3>
 
                 <div>
@@ -112,7 +112,7 @@
                             <span class='flex items-center gap-1 text-sky-500'><span class='w-3 h-1 bg-sky-400 rounded-full'></span> สีฟ้า PM2.5</span>
                             <span class='flex items-center gap-1 text-emerald-500'><span class='w-3 h-1 bg-emerald-500 rounded-full'></span> สีเขียว Gas</span>
                         </h4>
-                        <span class='text-[11px] text-slate-400 font-semibold'>แสดงข้อมูลแบบเรียลไทม์</span>
+                        <span class='text-[11px] text-slate-400 font-semibold'>อัปเดตอัตโนมัติ</span>
                     </div>
                     <div class='relative w-full h-64 bg-white p-3 rounded-xl border border-slate-200 shadow-inner'>
                         <canvas id='combinedChart'></canvas>
@@ -227,19 +227,20 @@
         alertDismissed = true;
     }
 
-    // 🔄 ฟังก์ชันแสดงผลรายการประวัติที่ดึงมาจาก Google Sheets
+    // 🔄 ฟังก์ชันแสดงผลรายการประวัติ
     function renderHistoryLogs(historyList) {
         const logList = document.getElementById('detection-log-list');
-        document.getElementById('detection-count').innerText = historyList ? historyList.length : 0;
+        const list = Array.isArray(historyList) ? historyList : [];
+        document.getElementById('detection-count').innerText = list.length;
 
-        if (!historyList || historyList.length === 0) {
+        if (list.length === 0) {
             logList.innerHTML = `<div class='text-center py-6 text-slate-400 text-xs font-semibold'>ไม่มีประวัติการตรวจพบบุหรี่ไฟฟ้า</div>`;
             return;
         }
 
-        logList.innerHTML = ''; // ล้างรายการเก่าออกแล้ววาดใหม่
+        logList.innerHTML = ''; 
 
-        historyList.forEach(item => {
+        list.forEach(item => {
             const newLog = document.createElement('div');
             newLog.className = 'flex items-center justify-between p-3.5 bg-red-50/70 border border-red-100 rounded-2xl text-xs transition-all';
             
@@ -261,9 +262,30 @@
         });
     }
 
-    let latestData = null;
+    // 📊 ฟังก์ชันอัปเดตกราฟด้วย 20 ค่าล่าสุดที่ส่งมาจาก Google Sheets
+    function updateChartsFromSheets(recentData) {
+        const logs = Array.isArray(recentData) ? recentData : [];
+        if (logs.length === 0) return;
 
-    // ⚡ ดึงข้อมูลล่าสุด + ประวัติย้อนหลัง จาก Node.js (Render)
+        // ดึง labels เวลา และข้อมูลเซนเซอร์จาก Google Sheets
+        const labels = logs.map(item => item.time || '');
+        const pmValues = logs.map(item => item.pm25 !== undefined ? item.pm25 : 0);
+        const gasValues = logs.map(item => item.gas !== undefined ? item.gas : 0);
+        const tempValues = logs.map(item => item.temp !== undefined ? item.temp : 0);
+
+        // อัปเดตกราฟรวม (PM2.5 + Gas)
+        combinedChart.data.labels = labels;
+        combinedChart.data.datasets[0].data = pmValues;
+        combinedChart.data.datasets[1].data = gasValues;
+        combinedChart.update();
+
+        // อัปเดตกราฟอุณหภูมิ
+        tempChart.data.labels = labels;
+        tempChart.data.datasets[0].data = tempValues;
+        tempChart.update();
+    }
+
+    // ⚡ ดึงข้อมูลล่าสุด + 20 ค่าล่าสุด + ประวัติย้อนหลัง จาก Express API
     function updateRealtimeData() {
         fetch(RENDER_API_URL) 
             .then(res => {
@@ -272,10 +294,12 @@
             })
             .then(resData => {
                 const data = resData.latest || { pm25: 0, gas: 0, temp: 0, time: "" };
-                latestData = data; 
                 
-                // 🟢 แสดงรายการประวัติที่ผ่านการกรอง 5 นาที
+                // 🟢 อัปเดตรายการประวัติ
                 renderHistoryLogs(resData.history);
+
+                // 🟢 วาดกราฟด้วย 20 ค่าล่าสุดจาก Google Sheets
+                updateChartsFromSheets(resData.recent);
 
                 // 🟢 อัปเดตไฟสถานะการเชื่อมต่อ
                 const connDot = document.getElementById('connection-dot');
@@ -287,9 +311,9 @@
                 connText.innerText = 'เชื่อมต่อ Cloud แล้ว';
 
                 // อัปเดตตัวเลขเซนเซอร์
-                document.getElementById('pm-value').innerText = data.pm25 ?? '--';
-                document.getElementById('gas-value').innerText = data.gas ?? '--';
-                document.getElementById('temp-value').innerText = data.temp ?? '--';
+                document.getElementById('pm-value').innerText = data.pm25 !== undefined ? data.pm25 : '--';
+                document.getElementById('gas-value').innerText = data.gas !== undefined ? data.gas : '--';
+                document.getElementById('temp-value').innerText = data.temp !== undefined ? data.temp : '--';
                 
                 let pill = document.getElementById('status-pill');
                 let txt = document.getElementById('status-text');
@@ -333,35 +357,8 @@
             });
     }
 
-    // ⏱️ วาดจุดลงบนกราฟ
-    function recordToChart() {
-        if (latestData && (latestData.pm25 > 0 || latestData.gas > 0)) {
-            const now = new Date();
-            const timeStr = latestData.time || now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            
-            if (combinedChart.data.labels.length >= 20) {
-                combinedChart.data.labels.shift();
-                combinedChart.data.datasets[0].data.shift();
-                combinedChart.data.datasets[1].data.shift();
-            }
-            combinedChart.data.labels.push(timeStr);
-            combinedChart.data.datasets[0].data.push(latestData.pm25);
-            combinedChart.data.datasets[1].data.push(latestData.gas);
-            combinedChart.update();
-
-            if (tempChart.data.labels.length >= 20) {
-                tempChart.data.labels.shift();
-                tempChart.data.datasets[0].data.shift();
-            }
-            tempChart.data.labels.push(timeStr);
-            tempChart.data.datasets[0].data.push(latestData.temp);
-            tempChart.update();
-        }
-    }
-
     updateRealtimeData();
-    setInterval(updateRealtimeData, 3000); // ดึงข้อมูลทุก 3 วินาที
-    setInterval(recordToChart, 30000);     // อัปเดตกราฟทุก 30 วินาที
+    setInterval(updateRealtimeData, 3000); // อัปเดตข้อมูลทุกๆ 3 วินาที
 
     window.addEventListener('DOMContentLoaded', () => {
         if (window.lucide) lucide.createIcons();
