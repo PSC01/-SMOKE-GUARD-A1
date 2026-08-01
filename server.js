@@ -30,12 +30,17 @@ app.post('/api/sensor', async (req, res) => {
     res.status(200).json({ status: "Success" });
 });
 
-// 🌐 2. API สำหรับ Dashboard (ดึงค่าล่าสุด + ประวัติตรวจพบจาก Google Sheets)
+// 🌐 2. API สำหรับ Dashboard (ดึงค่าล่าสุด + ประวัติตรวจพบ + 20 ค่าล่าสุดสำหรับกราฟ)
 app.get('/api/data', async (req, res) => {
-    const alertHistory = await getHistoryFromGoogleSheet();
+    const [alertHistory, recentLogs] = await Promise.all([
+        getHistoryFromGoogleSheet(),
+        getRecentLogsFromGoogleSheet() // ดึง 20 รายการล่าสุดสำหรับกราฟ
+    ]);
+
     res.json({ 
         latest: latestData, 
-        history: alertHistory 
+        history: alertHistory,
+        recent: recentLogs
     });
 });
 
@@ -54,14 +59,28 @@ async function saveToGoogleSheet(data) {
     }
 }
 
-// ฟังก์ชันดึงประวัติตรวจพบจาก Google Sheets (ที่มี Cooldown 5 นาทีแล้ว)
+// ฟังก์ชันดึงประวัติตรวจพบจาก Google Sheets
 async function getHistoryFromGoogleSheet() {
     if (!GOOGLE_SHEET_URL) return [];
     try {
         const response = await axios.get(GOOGLE_SHEET_URL);
-        return response.data; // ได้ Array ประวัติย้อนหลังที่กรองแล้ว
+        return Array.isArray(response.data) ? response.data : [];
     } catch (err) {
         console.error("Get Sheet History Error:", err.message);
+        return [];
+    }
+}
+
+// 🟢 ฟังก์ชันดึง 20 ค่าล่าสุดจาก Google Sheets สำหรับวาดกราฟ
+async function getRecentLogsFromGoogleSheet() {
+    if (!GOOGLE_SHEET_URL) return [];
+    try {
+        const response = await axios.get(GOOGLE_SHEET_URL);
+        const data = Array.isArray(response.data) ? response.data : [];
+        // ตัดเอาเฉพาะ 20 รายการล่าสุด
+        return data.slice(-20);
+    } catch (err) {
+        console.error("Get Recent Logs Error:", err.message);
         return [];
     }
 }
