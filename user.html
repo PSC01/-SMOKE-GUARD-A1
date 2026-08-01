@@ -11,7 +11,7 @@
 <body class='bg-slate-100'>
     <div class='app-shell'>
         <header class='dashboard-wrap'>
-            <div class='flex items-center justify-between mb-4 relative z-10'>
+            <div class='flex items-center justify-between mb-4 relative z-10 p-4 max-w-5xl mx-auto'>
                 <a href='index.html' class='flex items-center gap-2 text-xs font-bold text-slate-500 bg-white border border-slate-200 px-3 py-1.5 rounded-xl hover:bg-slate-50 transition-all'>
                     <i data-lucide='arrow-left' width='14' height='14'></i> กลับหน้าแรก
                 </a>
@@ -19,13 +19,13 @@
             </div>
         </header>
         
-        <main class='dashboard-wrap space-y-6'>
+        <main class='dashboard-wrap space-y-6 max-w-5xl mx-auto px-4 pb-12'>
             <section class='bg-white dashboard-panel mb-6 rounded-3xl shadow-sm border border-slate-200 overflow-hidden'>
                 <div class='p-[30px_30px_25px] text-center border-b border-slate-200 relative'>
                     <h1 class='font-bold text-2xl m-0 flex items-center justify-center text-slate-800'>SMOKE GUARD A1</h1>
                     <p class='text-gray-500 mt-2 mb-0 text-sm'>ระบบอัจฉริยะเฝ้าระวังควันบุหรี่ไฟฟ้าในสถานศึกษา</p>
                     <div class='flex justify-center mt-3'>
-                        <div id='status-pill' class='inline-flex items-center gap-2 rounded-full p-[7px_13px] text-xs font-bold' style='background:#e5f8ef; color:#188d58;'>
+                        <div id='status-pill' class='inline-flex items-center gap-2 rounded-full p-[7px_13px] text-xs font-bold transition-all' style='background:#e5f8ef; color:#188d58;'>
                             <span id='status-text'>🟢 คุณภาพอากาศปกติ</span>
                         </div>
                     </div>
@@ -103,10 +103,44 @@
                     document.getElementById('pm-value').innerText = data.pm25 ?? '--';
                     document.getElementById('gas-value').innerText = data.gas ?? '--';
                     document.getElementById('temp-value').innerText = data.temp ?? '--';
+                    document.getElementById('updated-time').innerText = data.time || new Date().toLocaleTimeString('th-TH');
                     
                     let pill = document.getElementById('status-pill');
                     let txt = document.getElementById('status-text');
 
                     // 🚨 1. เงื่อนไขตรวจพบบุหรี่ไฟฟ้า (Gas > 1200 หรือ PM2.5 >= 300)
                     if (data.gas > 1200 || data.pm25 >= 300) {
-                        txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
+                        txt.innerText = '🚨 ตรวจพบความผิดปกติ / ควันบุหรี่ไฟฟ้า!';
+                        pill.style.background = '#fde8e8';
+                        pill.style.color = '#e02424';
+                    } else {
+                        txt.innerText = '🟢 คุณภาพอากาศปกติ';
+                        pill.style.background = '#e5f8ef';
+                        pill.style.color = '#188d58';
+                    }
+                })
+                .catch(err => {
+                    console.error("Fetch error:", err);
+                    const connDot = document.getElementById('connection-dot');
+                    const connText = document.getElementById('connection-text');
+                    const connPill = document.getElementById('connection-pill');
+                    
+                    connPill.className = 'flex items-center gap-1.5 text-amber-600 font-semibold';
+                    connDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500';
+                    connText.innerText = 'กำลังพยายามเชื่อมต่อใหม่...';
+                });
+        }
+
+        // เรียกดึงข้อมูลครั้งแรก และตั้งเวลาดึงใหม่ทุก 3 วินาที
+        updateData();
+        setInterval(updateData, 3000);
+
+        // แสดงผล Lucide Icons
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+</html>
