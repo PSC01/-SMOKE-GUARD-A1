@@ -18,7 +18,7 @@
             </div>
             <h2 class='text-2xl font-black text-red-600 mb-2'>🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!</h2>
             <p class='text-slate-600 text-sm mb-6'>
-                ระบบตรวจพบปริมาณฝุ่น PM2.5 และแก๊สพุ่งสูงขึ้นเกินค่ามาตรฐานในขณะนี้ โปรดตรวจสอบพื้นที่โดยด่วน
+                ระบบตรวจพบปริมาณฝุ่น PM2.5 หรือแก๊สพุ่งสูงเกินเกณฑ์ความปลอดภัย โปรดเข้าตรวจสอบพื้นที่ทันที
             </p>
             <button onclick='closeAlertModal()' class='w-full py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-lg shadow-red-200 active:scale-95 transition-all text-sm flex items-center justify-center gap-2'>
                 <i data-lucide='check-circle' width='18' height='18'></i> รับทราบ / ปิดการแจ้งเตือน
@@ -26,8 +26,8 @@
         </div>
     </div>
 
-    <div class='app-shell'>
-        <header class='dashboard-wrap'>
+    <div class='app-shell max-w-5xl mx-auto px-4 pb-12'>
+        <header class='dashboard-wrap pt-4'>
             <div class='flex items-center justify-between mb-4 relative z-10'>
                 <a href='index.html' class='flex items-center gap-2 text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-3 py-1.5 rounded-xl hover:bg-red-100 transition-all'>
                     <i data-lucide='log-out' width='14' height='14'></i> ออกจากระบบ
@@ -36,15 +36,15 @@
             </div>
         </header>
         
-        <main class='dashboard-wrap'>
-            <section class='bg-white dashboard-panel mb-6 rounded-3xl shadow-sm border border-slate-200 overflow-hidden'>
+        <main class='dashboard-wrap space-y-6'>
+            <section class='bg-white dashboard-panel rounded-3xl shadow-sm border border-slate-200 overflow-hidden'>
                 <div class='p-[30px_30px_25px] text-center border-b border-slate-200 relative'>
                     <h1 class='font-bold text-2xl m-0 flex items-center justify-center gap-2 text-slate-800'>
                         SMOKE GUARD A1
                     </h1>
                     <p class='text-gray-500 mt-2 mb-0 text-sm'>แผงควบคุมและเฝ้าระวังสำหรับผู้ดูแลระบบ</p>
                     <div class='flex justify-center mt-3'>
-                        <div id='status-pill' class='inline-flex items-center gap-2 rounded-full p-[7px_13px] text-xs font-bold' style='background:#e5f8ef; color:#188d58;'>
+                        <div id='status-pill' class='inline-flex items-center gap-2 rounded-full p-[7px_13px] text-xs font-bold transition-all' style='background:#e5f8ef; color:#188d58;'>
                             <span id='status-text'>🟢 คุณภาพอากาศปกติ</span>
                         </div>
                     </div>
@@ -76,33 +76,32 @@
                 </div>
             </section>
 
-            <section class='bg-white rounded-3xl border border-red-200 p-6 shadow-sm mb-6'>
+            <section class='bg-white rounded-3xl border border-red-200 p-6 shadow-sm'>
                 <div class='flex items-center justify-between border-b pb-4 mb-4'>
                     <div class='flex items-center gap-3'>
                         <div class='w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center font-bold'>
                             <i data-lucide='shield-alert' width='22' height='22'></i>
                         </div>
                         <div>
-                            <h3 class='font-bold text-base text-slate-800 m-0'>ประวัติการตรวจพบบุหรี่ไฟฟ้า</h3>
-                            <p class='text-xs text-slate-500 m-0'>บันทึกวัน เวลา และค่าเซนเซอร์</p>
+                            <h3 class='font-bold text-base text-slate-800 m-0'>ประวัติการตรวจพบบุหรี่ไฟฟ้า (ดึงจาก Google Sheet)</h3>
+                            <p class='text-xs text-slate-500 m-0'>กรองช่วงเวลาบันทึกทุก 5 นาที</p>
                         </div>
                     </div>
-                    <div class='text-right bg-red-50 border border-red-100 px-4 py-2 rounded-2xl relative group'>
+                    <div class='text-right bg-red-50 border border-red-100 px-4 py-2 rounded-2xl'>
                         <span class='text-xs text-slate-500 block font-semibold'>ตรวจพบสะสม</span>
                         <span id='detection-count' class='text-2xl font-black text-red-600'>0</span>
                         <span class='text-xs font-bold text-red-600 ml-0.5'>ครั้ง</span>
-                        <button onclick='resetDetectionCount()' class='text-[10px] text-slate-400 hover:text-red-500 underline block mt-1'>รีเซ็ตตัวเลข</button>
                     </div>
                 </div>
 
                 <div class='space-y-3 max-h-60 overflow-y-auto pr-1' id='detection-log-list'>
                     <div id='empty-log' class='text-center py-6 text-slate-400 text-xs font-semibold'>
-                        ยังไม่มีประวัติในรอบนี้
+                        กำลังโหลดประวัติจากระบบ...
                     </div>
                 </div>
             </section>
 
-            <section class='bg-white rounded-3xl border border-slate-200 p-6 shadow-sm mb-6 flex flex-col gap-6'>
+            <section class='bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex flex-col gap-6'>
                 <h3 class='font-bold text-base text-slate-800 flex items-center gap-2 border-b pb-3'>
                     <i data-lucide='line-chart' width='18' height='18'></i> กราฟแนวโน้มคุณภาพอากาศ
                 </h3>
@@ -113,7 +112,7 @@
                             <span class='flex items-center gap-1 text-sky-500'><span class='w-3 h-1 bg-sky-400 rounded-full'></span> สีฟ้า PM2.5</span>
                             <span class='flex items-center gap-1 text-emerald-500'><span class='w-3 h-1 bg-emerald-500 rounded-full'></span> สีเขียว Gas</span>
                         </h4>
-                        <span class='text-[11px] text-slate-400 font-semibold'>ตัวนับเวลาทุกๆ รอบบันทึก</span>
+                        <span class='text-[11px] text-slate-400 font-semibold'>แสดงข้อมูลแบบเรียลไทม์</span>
                     </div>
                     <div class='relative w-full h-64 bg-white p-3 rounded-xl border border-slate-200 shadow-inner'>
                         <canvas id='combinedChart'></canvas>
@@ -130,15 +129,15 @@
                 </div>
             </section>
 
-            <section class='bg-white rounded-3xl border border-slate-200 p-6 shadow-sm mb-6'>
+            <section class='bg-white rounded-3xl border border-slate-200 p-6 shadow-sm'>
                 <h3 class='font-bold text-base text-slate-800 mb-4 flex items-center gap-2'>
-                    <i data-lucide='sliders' width='18' height='18'></i> ประวัติการบันทึกข้อมูล
+                    <i data-lucide='sliders' width='18' height='18'></i> ฐานข้อมูลหลัก
                 </h3>
                 <div>
                     <a href='https://docs.google.com/spreadsheets/d/1SrfuodKkq0HfNNPbWeqxTomLevAeqk0-OIydaHs89rI/edit?gid=1403022934#gid=1403022934' target='_blank' class='flex items-center justify-between p-4 bg-emerald-50 border border-emerald-200 rounded-2xl hover:bg-emerald-100 transition-all text-emerald-800 font-bold text-sm w-full'>
                         <span class='flex items-center gap-3'>
                             <i data-lucide='file-spreadsheet' width='20' height='20'></i>
-                            เปิดดูตารางบันทึกข้อมูล Google Sheets
+                            เปิดดูตารางบันทึกข้อมูลเต็มบน Google Sheets
                         </span>
                         <i data-lucide='external-link' width='16' height='16'></i>
                     </a>
@@ -148,23 +147,8 @@
     </div>
 
     <script>
-    // 🔗 เปลี่ยนจุดดึงข้อมูลมาที่ Node.js บน Render
     const RENDER_API_URL = 'https://smoke-guard-a1.onrender.com/api/data'; 
-    
     let alertDismissed = false;
-    let isCurrentlyAlerting = false; 
-
-    // 💾 ดึงค่าตรวจพบสะสมจาก localStorage
-    let totalDetections = parseInt(localStorage.getItem('totalDetections')) || 0;
-    document.getElementById('detection-count').innerText = totalDetections;
-
-    function resetDetectionCount() {
-        if (confirm('คุณต้องการรีเซ็ตตัวเลขการตรวจพบสะสมเป็น 0 ใช่หรือไม่?')) {
-            totalDetections = 0;
-            localStorage.setItem('totalDetections', 0);
-            document.getElementById('detection-count').innerText = 0;
-        }
-    }
 
     // 📈 กราฟรวม (PM2.5 + Gas)
     const ctxCombined = document.getElementById('combinedChart').getContext('2d');
@@ -174,7 +158,7 @@
             labels: [],
             datasets: [
                 {
-                    label: 'สีฟ้า PM2.5',
+                    label: 'PM2.5',
                     data: [],
                     borderColor: '#38bdf8',
                     backgroundColor: 'transparent',
@@ -183,7 +167,7 @@
                     pointRadius: 2
                 },
                 {
-                    label: 'สีเขียว GAS',
+                    label: 'GAS',
                     data: [],
                     borderColor: '#22c55e',
                     backgroundColor: 'transparent',
@@ -198,16 +182,8 @@
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                x: {
-                    display: true,
-                    title: { display: true, text: 'เวลาที่บันทึก', font: { size: 11, weight: 'bold' } },
-                    ticks: { font: { size: 9 } }
-                },
-                y: {
-                    beginAtZero: true,
-                    title: { display: true, text: 'ค่าตัวเลข', font: { size: 11, weight: 'bold' } },
-                    ticks: { font: { size: 10 } }
-                }
+                x: { display: true, ticks: { font: { size: 9 } } },
+                y: { beginAtZero: true, ticks: { font: { size: 10 } } }
             }
         }
     });
@@ -240,28 +216,6 @@
         }
     });
 
-    function pushCombinedData(timeLabel, pmValue, gasValue) {
-        if (combinedChart.data.labels.length >= 20) {
-            combinedChart.data.labels.shift();
-            combinedChart.data.datasets[0].data.shift();
-            combinedChart.data.datasets[1].data.shift();
-        }
-        combinedChart.data.labels.push(timeLabel);
-        combinedChart.data.datasets[0].data.push(pmValue);
-        combinedChart.data.datasets[1].data.push(gasValue);
-        combinedChart.update();
-    }
-
-    function pushTempData(timeLabel, tempValue) {
-        if (tempChart.data.labels.length >= 20) {
-            tempChart.data.labels.shift();
-            tempChart.data.datasets[0].data.shift();
-        }
-        tempChart.data.labels.push(timeLabel);
-        tempChart.data.datasets[0].data.push(tempValue);
-        tempChart.update();
-    }
-
     function showAlertModal() {
         if (!alertDismissed) {
             document.getElementById('alert-modal').classList.remove('hidden');
@@ -273,39 +227,43 @@
         alertDismissed = true;
     }
 
-    function addDetectionLog(data, fullDateTimeStr) {
-        totalDetections++;
-        localStorage.setItem('totalDetections', totalDetections);
-        document.getElementById('detection-count').innerText = totalDetections;
-
-        const emptyLog = document.getElementById('empty-log');
-        if (emptyLog) emptyLog.style.display = 'none';
-
+    // 🔄 ฟังก์ชันแสดงผลรายการประวัติที่ดึงมาจาก Google Sheets
+    function renderHistoryLogs(historyList) {
         const logList = document.getElementById('detection-log-list');
-        const newLog = document.createElement('div');
-        newLog.className = 'flex items-center justify-between p-3.5 bg-red-50/70 border border-red-100 rounded-2xl text-xs transition-all animate-fade-in';
-        
-        newLog.innerHTML = `
-            <div class='flex items-center gap-2.5'>
-                <span class='w-2 h-2 rounded-full bg-red-500 animate-ping'></span>
-                <div>
-                    <span class='font-bold text-slate-800 block'>🚨 ตรวจพบบุหรี่ไฟฟ้า</span>
-                    <span class='text-slate-500 font-medium'>🕒 ${fullDateTimeStr}</span>
-                </div>
-            </div>
-            <div class='flex gap-2 font-bold'>
-                <span class='px-2 py-1 bg-sky-100 text-sky-700 rounded-lg'>PM: ${data.pm25}</span>
-                <span class='px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg'>Gas: ${data.gas}</span>
-                <span class='px-2 py-1 bg-blue-100 text-blue-700 rounded-lg'>Temp: ${data.temp}°C</span>
-            </div>
-        `;
+        document.getElementById('detection-count').innerText = historyList ? historyList.length : 0;
 
-        logList.insertBefore(newLog, logList.firstChild);
+        if (!historyList || historyList.length === 0) {
+            logList.innerHTML = `<div class='text-center py-6 text-slate-400 text-xs font-semibold'>ไม่มีประวัติการตรวจพบบุหรี่ไฟฟ้า</div>`;
+            return;
+        }
+
+        logList.innerHTML = ''; // ล้างรายการเก่าออกแล้ววาดใหม่
+
+        historyList.forEach(item => {
+            const newLog = document.createElement('div');
+            newLog.className = 'flex items-center justify-between p-3.5 bg-red-50/70 border border-red-100 rounded-2xl text-xs transition-all';
+            
+            newLog.innerHTML = `
+                <div class='flex items-center gap-2.5'>
+                    <span class='w-2 h-2 rounded-full bg-red-500 animate-ping'></span>
+                    <div>
+                        <span class='font-bold text-slate-800 block'>🚨 ตรวจพบบุหรี่ไฟฟ้า</span>
+                        <span class='text-slate-500 font-medium'>📅 ${item.date || ''} | 🕒 ${item.time || ''} น.</span>
+                    </div>
+                </div>
+                <div class='flex gap-2 font-bold'>
+                    <span class='px-2 py-1 bg-sky-100 text-sky-700 rounded-lg'>PM: ${item.pm25}</span>
+                    <span class='px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg'>Gas: ${item.gas}</span>
+                    <span class='px-2 py-1 bg-blue-100 text-blue-700 rounded-lg'>Temp: ${item.temp}°C</span>
+                </div>
+            `;
+            logList.appendChild(newLog);
+        });
     }
 
     let latestData = null;
 
-    // ⚡ 1. ดึงข้อมูลจาก Node.js Server (Render)
+    // ⚡ ดึงข้อมูลล่าสุด + ประวัติย้อนหลัง จาก Node.js (Render)
     function updateRealtimeData() {
         fetch(RENDER_API_URL) 
             .then(res => {
@@ -313,10 +271,12 @@
                 return res.json();
             })
             .then(resData => {
-                // ดึงค่า latest จากโครงสร้างข้อมูลใหม่ของ Node.js ({ latest, history })
                 const data = resData.latest || { pm25: 0, gas: 0, temp: 0, time: "" };
                 latestData = data; 
                 
+                // 🟢 แสดงรายการประวัติที่ผ่านการกรอง 5 นาที
+                renderHistoryLogs(resData.history);
+
                 // 🟢 อัปเดตไฟสถานะการเชื่อมต่อ
                 const connDot = document.getElementById('connection-dot');
                 const connText = document.getElementById('connection-text');
@@ -326,7 +286,7 @@
                 connDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping';
                 connText.innerText = 'เชื่อมต่อ Cloud แล้ว';
 
-                // อัปเดตค่าเซนเซอร์
+                // อัปเดตตัวเลขเซนเซอร์
                 document.getElementById('pm-value').innerText = data.pm25 ?? '--';
                 document.getElementById('gas-value').innerText = data.gas ?? '--';
                 document.getElementById('temp-value').innerText = data.temp ?? '--';
@@ -337,24 +297,15 @@
                 const now = new Date();
                 const dateStr = now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
                 const timeStr = data.time || now.toLocaleTimeString('th-TH');
-                const fullDateTimeStr = `${dateStr} เวลา ${timeStr} น.`;
+                document.getElementById('updated-time').innerText = `${dateStr} เวลา ${timeStr} น.`;
 
-                document.getElementById('updated-time').innerText = fullDateTimeStr;
-
-                // เงื่อนไขแจ้งเตือน Gas > 1200 หรือ PM2.5 > 300
-                if (data.gas > 1200 || data.pm25 > 300) {
+                // เงื่อนไขแสดงแจ้งเตือน (Gas > 1200 หรือ PM2.5 >= 300)
+                if (data.gas > 1200 || data.pm25 >= 300) {
                     txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
                     pill.style.background = '#7f1d1d';
                     pill.style.color = '#ffffff';
-                    
                     showAlertModal();
-
-                    if (!isCurrentlyAlerting) {
-                        addDetectionLog(data, fullDateTimeStr);
-                        isCurrentlyAlerting = true;
-                    }
                 } else {
-                    isCurrentlyAlerting = false; 
                     alertDismissed = false;
                     document.getElementById('alert-modal').classList.add('hidden');
 
@@ -371,8 +322,6 @@
             })
             .catch(err => {
                 console.error('Connection Error:', err);
-                
-                // 🔴 อัปเดตไฟสถานะการเชื่อมต่อเป็นขาดการเชื่อมต่อ
                 const connDot = document.getElementById('connection-dot');
                 const connText = document.getElementById('connection-text');
                 const connPill = document.getElementById('connection-pill');
@@ -380,30 +329,43 @@
                 connPill.className = 'flex items-center gap-1.5 text-red-500 font-semibold';
                 connDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500';
                 connText.innerText = 'ขาดการเชื่อมต่อ Cloud';
-
                 document.getElementById('status-text').innerText = '⏳ กำลังรอเชื่อมต่อกับ Cloud...';
             });
     }
 
-    // ⏱️ 2. วาดจุดลงบนกราฟ
+    // ⏱️ วาดจุดลงบนกราฟ
     function recordToChart() {
         if (latestData && (latestData.pm25 > 0 || latestData.gas > 0)) {
             const now = new Date();
             const timeStr = latestData.time || now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             
-            pushCombinedData(timeStr, latestData.pm25, latestData.gas);
-            pushTempData(timeStr, latestData.temp);
+            if (combinedChart.data.labels.length >= 20) {
+                combinedChart.data.labels.shift();
+                combinedChart.data.datasets[0].data.shift();
+                combinedChart.data.datasets[1].data.shift();
+            }
+            combinedChart.data.labels.push(timeStr);
+            combinedChart.data.datasets[0].data.push(latestData.pm25);
+            combinedChart.data.datasets[1].data.push(latestData.gas);
+            combinedChart.update();
+
+            if (tempChart.data.labels.length >= 20) {
+                tempChart.data.labels.shift();
+                tempChart.data.datasets[0].data.shift();
+            }
+            tempChart.data.labels.push(timeStr);
+            tempChart.data.datasets[0].data.push(latestData.temp);
+            tempChart.update();
         }
     }
 
     updateRealtimeData();
+    setInterval(updateRealtimeData, 3000); // ดึงข้อมูลทุก 3 วินาที
+    setInterval(recordToChart, 30000);     // อัปเดตกราฟทุก 30 วินาที
 
-    // ดึงข้อมูลจาก Node.js บน Render ทุกๆ 3 วินาที
-    setInterval(updateRealtimeData, 3000); 
-    // อัปเดตกราฟทุกๆ 30 วินาที
-    setInterval(recordToChart, 30000);        
-
-    lucide.createIcons();
+    window.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) lucide.createIcons();
+    });
     </script>
 </body>
 </html>
