@@ -12,6 +12,9 @@ const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwl1vI3jsiwIUC
 
 let latestData = { pm25: 0, gas: 0, temp: 0, time: "" };
 
+// ⏱️ ตัวแปรสำหรับเก็บเวลาการแจ้งเตือน LINE ครั้งล่าสุด
+let lastLineAlertTime = 0;
+
 // 📩 1. API รับค่าจาก ESP32
 app.post('/api/sensor', async (req, res) => {
     const { pm25, gas, temp } = req.body;
@@ -24,7 +27,15 @@ app.post('/api/sensor', async (req, res) => {
 
     // 1.2 ตรวจพบสภาวะเสี่ยง -> ยิง LINE (Gas > 1200 และ PM2.5 >= 300 พร้อมกัน)
     if (gas > 1200 && pm25 >= 300) {
-        sendLineNotification(latestData);
+        const currentTime = Date.now();
+        
+        // ⏳ เว้นระยะแจ้งเตือน LINE อย่างน้อย 1 นาที (60,000 ms)
+        if (currentTime - lastLineAlertTime >= 60000) {
+            sendLineNotification(latestData);
+            lastLineAlertTime = currentTime; // อัปเดตเวลาแจ้งเตือนล่าสุด
+        } else {
+            console.log("⏳ ข้ามการส่ง LINE: ยังไม่พ้นระยะ Cooldown 1 นาที");
+        }
     }
 
     res.status(200).json({ status: "Success" });
@@ -75,7 +86,7 @@ async function getHistoryFromGoogleSheet() {
             const gasVal = Number(row.gas) || 0;
             const currentTimeMs = row.timestamp || 0;
 
-            // 🟢 แก้ไขเงื่อนไข: ต้องเกินทั้ง Gas (>1200) และ PM2.5 (>=300) พร้อมกันเท่านั้น
+            // 🟢 เงื่อนไข: ต้องเกินทั้ง Gas (>1200) และ PM2.5 (>=300) พร้อมกัน
             if (gasVal > 1200 && pm25Val >= 300) {
                 if (lastAlertTime === 0 || (currentTimeMs - lastAlertTime) >= 300000) {
                     alertHistory.push(row);
@@ -126,6 +137,7 @@ async function sendLineNotification(data) {
                 'Authorization': `Bearer ${token}`
             }
         });
+        console.log("📲 ส่งการแจ้งเตือน LINE เรียบร้อย!");
     } catch (err) {
         console.error("LINE Send Error:", err.message);
     }
