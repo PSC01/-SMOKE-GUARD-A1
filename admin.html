@@ -18,7 +18,7 @@
             </div>
             <h2 class='text-2xl font-black text-red-600 mb-2'>🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!</h2>
             <p class='text-slate-600 text-sm mb-6'>
-                ระบบตรวจพบปริมาณฝุ่น PM2.5 หรือแก๊สพุ่งสูงเกินเกณฑ์ความปลอดภัย โปรดเข้าตรวจสอบพื้นที่ทันที
+                ระบบตรวจพบปริมาณฝุ่น PM2.5 และแก๊สพุ่งสูงเกินเกณฑ์ความปลอดภัย โปรดเข้าตรวจสอบพื้นที่ทันที
             </p>
             <button onclick='closeAlertModal()' class='w-full py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-lg shadow-red-200 active:scale-95 transition-all text-sm flex items-center justify-center gap-2'>
                 <i data-lucide='check-circle' width='18' height='18'></i> รับทราบ / ปิดการแจ้งเตือน
@@ -37,8 +37,14 @@
         </header>
         
         <main class='dashboard-wrap space-y-6'>
-            <section class='bg-white dashboard-panel rounded-3xl shadow-sm border border-slate-200 overflow-hidden'>
+            <section class='bg-white dashboard-panel rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative'>
                 <div class='p-[30px_30px_25px] text-center border-b border-slate-200 relative'>
+                    
+                    <div class="absolute top-5 right-5 flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-2xl text-xs font-bold text-slate-700 shadow-sm">
+                        <span class="text-base">🔋</span>
+                        <span id="batteryVal">-- %</span>
+                    </div>
+
                     <h1 class='font-bold text-2xl m-0 flex items-center justify-center gap-2 text-slate-800'>
                         SMOKE GUARD A1
                     </h1>
@@ -83,7 +89,7 @@
                             <i data-lucide='shield-alert' width='22' height='22'></i>
                         </div>
                         <div>
-                            <h3 class='font-bold text-base text-slate-800 m-0'>ประวัติการตรวจพบบุหรี่ไฟฟ้า </h3>
+                            <h3 class='font-bold text-base text-slate-800 m-0'>ประวัติการตรวจพบบุหรี่ไฟฟ้า</h3>
                             <p class='text-xs text-slate-500 m-0'>กรองช่วงเวลาบันทึกทุก 5 นาที</p>
                         </div>
                     </div>
@@ -267,19 +273,16 @@
         const logs = Array.isArray(recentData) ? recentData : [];
         if (logs.length === 0) return;
 
-        // ดึง labels เวลา และข้อมูลเซนเซอร์จาก Google Sheets
         const labels = logs.map(item => item.time || '');
         const pmValues = logs.map(item => item.pm25 !== undefined ? item.pm25 : 0);
         const gasValues = logs.map(item => item.gas !== undefined ? item.gas : 0);
         const tempValues = logs.map(item => item.temp !== undefined ? item.temp : 0);
 
-        // อัปเดตกราฟรวม (PM2.5 + Gas)
         combinedChart.data.labels = labels;
         combinedChart.data.datasets[0].data = pmValues;
         combinedChart.data.datasets[1].data = gasValues;
         combinedChart.update();
 
-        // อัปเดตกราฟอุณหภูมิ
         tempChart.data.labels = labels;
         tempChart.data.datasets[0].data = tempValues;
         tempChart.update();
@@ -293,7 +296,7 @@
                 return res.json();
             })
             .then(resData => {
-                const data = resData.latest || { pm25: 0, gas: 0, temp: 0, time: "" };
+                const data = resData.latest || { pm25: 0, gas: 0, temp: 0, battery: 0, time: "" };
                 
                 // 🟢 อัปเดตรายการประวัติ
                 renderHistoryLogs(resData.history);
@@ -315,6 +318,9 @@
                 document.getElementById('gas-value').innerText = data.gas !== undefined ? data.gas : '--';
                 document.getElementById('temp-value').innerText = data.temp !== undefined ? data.temp : '--';
                 
+                // 🔋 อัปเดตระดับแบตเตอรี่ (%)
+                document.getElementById('batteryVal').innerText = (data.battery !== undefined ? data.battery : '--') + ' %';
+                
                 let pill = document.getElementById('status-pill');
                 let txt = document.getElementById('status-text');
 
@@ -323,8 +329,8 @@
                 const timeStr = data.time || now.toLocaleTimeString('th-TH');
                 document.getElementById('updated-time').innerText = `${dateStr} เวลา ${timeStr} น.`;
 
-                // เงื่อนไขแสดงแจ้งเตือน (Gas > 1200 หรือ PM2.5 >= 300)
-                if (data.gas > 1200 || data.pm25 >= 300) {
+                // 🟢 เงื่อนไขแสดงการเตือนภัย: ต้องเกินทั้ง Gas (>1200) และ PM2.5 (>=300) พร้อมกัน
+                if (data.gas > 1200 && data.pm25 >= 300) {
                     txt.innerText = '🚨 ตรวจพบการดูดบุหรี่ไฟฟ้า!';
                     pill.style.background = '#7f1d1d';
                     pill.style.color = '#ffffff';
@@ -333,7 +339,7 @@
                     alertDismissed = false;
                     document.getElementById('alert-modal').classList.add('hidden');
 
-                    if (data.pm25 > 75) {
+                    if (data.pm25 > 75 || data.gas > 800) {
                         txt.innerText = '🟠 เฝ้าระวังคุณภาพอากาศ';
                         pill.style.background = '#fff1d8'; 
                         pill.style.color = '#b86d00';
