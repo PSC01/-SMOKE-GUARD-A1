@@ -10,23 +10,31 @@ app.use(express.json());
 // ⚠️ URL ของ Google Apps Script Web App
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwl1vI3jsiwIUCanltA_BIR5cnT1L9c3V2CJVmId0nTqKxN6qeHrVaudcVJTK09jrmG/exec';
 
-let latestData = { pm25: 0, gas: 0, temp: 0, time: "" };
+// 🔋 เพิ่ม battery: 0 ในโครงสร้างข้อมูลเริ่มต้น
+let latestData = { pm25: 0, gas: 0, temp: 0, battery: 0, time: "" };
 
 // ⏱️ ตัวแปรสำหรับเก็บเวลาการแจ้งเตือน LINE ครั้งล่าสุด
 let lastLineAlertTime = 0;
 
 // 📩 1. API รับค่าจาก ESP32
 app.post('/api/sensor', async (req, res) => {
-    const { pm25, gas, temp } = req.body;
+    // 🟢 รับค่า battery เพิ่มเข้ามาจาก ESP32
+    const { pm25, gas, temp, battery } = req.body;
     const now = new Date().toLocaleTimeString('th-TH');
     
-    latestData = { pm25, gas, temp, time: now };
+    latestData = { 
+        pm25: Number(pm25) || 0, 
+        gas: Number(gas) || 0, 
+        temp: Number(temp) || 0, 
+        battery: Number(battery) || 0, 
+        time: now 
+    };
 
     // 1.1 ส่งข้อมูลไปบันทึกลง Google Sheets
     saveToGoogleSheet(latestData);
 
     // 1.2 ตรวจพบสภาวะเสี่ยง -> ยิง LINE (Gas > 1200 และ PM2.5 >= 300 พร้อมกัน)
-    if (gas > 1200 && pm25 >= 300) {
+    if (latestData.gas > 1200 && latestData.pm25 >= 300) {
         const currentTime = Date.now();
         
         // ⏳ เว้นระยะแจ้งเตือน LINE อย่างน้อย 1 นาที (60,000 ms)
@@ -117,7 +125,7 @@ async function getRecentLogsFromGoogleSheet() {
     }
 }
 
-// ฟังก์ชันยิง LINE Notification
+// ฟังก์ชันยิง LINE Notification (แสดงระดับแบตเตอรี่ด้วย)
 async function sendLineNotification(data) {
     const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
     const userId = process.env.LINE_TARGET_ID;
@@ -129,7 +137,7 @@ async function sendLineNotification(data) {
             to: userId,
             messages: [{
                 type: "text",
-                text: `🚨 [SMOKE GUARD A1] ตรวจพบสภาวะเสี่ยง!\n💨 PM2.5: ${data.pm25} µg/m³\n🧪 Gas: ${data.gas}\n🌡️ Temp: ${data.temp} °C\n🕒 เวลา: ${data.time}`
+                text: `🚨 [SMOKE GUARD A1] ตรวจพบสภาวะเสี่ยง!\n💨 PM2.5: ${data.pm25} µg/m³\n🧪 Gas: ${data.gas}\n🌡️ Temp: ${data.temp} °C\n🔋 Battery: ${data.battery}%\n🕒 เวลา: ${data.time}`
             }]
         }, {
             headers: {
