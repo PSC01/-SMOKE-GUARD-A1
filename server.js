@@ -10,15 +10,14 @@ app.use(express.json());
 // ⚠️ URL ของ Google Apps Script Web App
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwl1vI3jsiwIUCanltA_BIR5cnT1L9c3V2CJVmId0nTqKxN6qeHrVaudcVJTK09jrmG/exec';
 
-// 🔋 เพิ่ม battery: 0 ในโครงสร้างข้อมูลเริ่มต้น
+// 🔋 โครงสร้างข้อมูลเริ่มต้นรองรับ battery
 let latestData = { pm25: 0, gas: 0, temp: 0, battery: 0, time: "" };
 
-// ⏱️ ตัวแปรสำหรับเก็บเวลาการแจ้งเตือน LINE ครั้งล่าสุด
+// ⏱️ ตัวแปรสำหรับเก็บเวลาการแจ้งเตือน LINE ครั้งล่าสุด (Cooldown 1 นาที)
 let lastLineAlertTime = 0;
 
 // 📩 1. API รับค่าจาก ESP32
-app.post('/api/sensor', async (req, res) => {
-    // 🟢 รับค่า battery เพิ่มเข้ามาจาก ESP32
+app.post('/api/sensor', (req, res) => {
     const { pm25, gas, temp, battery } = req.body;
     const now = new Date().toLocaleTimeString('th-TH');
     
@@ -30,7 +29,10 @@ app.post('/api/sensor', async (req, res) => {
         time: now 
     };
 
-    // 1.1 ส่งข้อมูลไปบันทึกลง Google Sheets
+    // ตอบกลับ ESP32 ทันที เพื่อป้องกันการเชื่อมต่อค้าง (Timeout)
+    res.status(200).json({ status: "Success", data: latestData });
+
+    // 1.1 ส่งข้อมูลไปบันทึกลง Google Sheets แบบเบื้องหลัง
     saveToGoogleSheet(latestData);
 
     // 1.2 ตรวจพบสภาวะเสี่ยง -> ยิง LINE (Gas > 1200 และ PM2.5 >= 300 พร้อมกัน)
@@ -45,33 +47,40 @@ app.post('/api/sensor', async (req, res) => {
             console.log("⏳ ข้ามการส่ง LINE: ยังไม่พ้นระยะ Cooldown 1 นาที");
         }
     }
-
-    res.status(200).json({ status: "Success" });
 });
 
 // 🌐 2. API สำหรับ Dashboard (ดึงค่าล่าสุด + ประวัติตรวจพบ + 20 ค่าล่าสุดสำหรับกราฟ)
 app.get('/api/data', async (req, res) => {
-    const [alertHistory, recentLogs] = await Promise.all([
-        getHistoryFromGoogleSheet(),
-        getRecentLogsFromGoogleSheet() // ดึง 20 รายการล่าสุดสำหรับกราฟ
-    ]);
+    try {
+        const [alertHistory, recentLogs] = await Promise.all([
+            getHistoryFromGoogleSheet(),
+            getRecentLogsFromGoogleSheet() // ดึง 20 รายการล่าสุดสำหรับกราฟ
+        ]);
 
-    res.json({ 
-        latest: latestData, 
-        history: alertHistory,
-        recent: recentLogs
-    });
+        res.json({ 
+            latest: latestData, 
+            history: alertHistory,
+            recent: recentLogs
+        });
+    } catch (err) {
+        console.error("API /api/data Error:", err.message);
+        res.json({
+            latest: latestData,
+            history: [],
+            recent: []
+        });
+    }
 });
 
 // -------------------------------------------------------------
 // 🛠️ Helper Functions
 // -------------------------------------------------------------
 
-// 🛠️ ฟังก์ชันส่งข้อมูลลง Google Sheets
+// 🛠️ ฟังก์ชันส่งข้อมูลลง Google Sheets (เพิ่ม battery เข้าไปด้วย)
 async function saveToGoogleSheet(data) {
     if (!GOOGLE_SHEET_URL) return;
     try {
-        const url = `${GOOGLE_SHEET_URL}?pm25=${data.pm25}&gas=${data.gas}&temp=${data.temp}`;
+        const url = `${GOOGLE_SHEET_URL}?pm25=${data.pm25}&gas=${data.gas}&temp=${data.temp}&battery=${data.battery}`;
         await axios.get(url);
         console.log("✅ บันทึกลง Google Sheet สำเร็จ!");
     } catch (err) {
@@ -92,13 +101,20 @@ async function getHistoryFromGoogleSheet() {
         allData.forEach(row => {
             const pm25Val = Number(row.pm25) || 0;
             const gasVal = Number(row.gas) || 0;
-            const currentTimeMs = row.timestamp || 0;
+            
+            // แปลงค่าเวลา timestamp หากส่งเป็น string หรือ Date
+            let currentTimeMs = 0;
+            if (row.timestamp) {
+                currentTimeMs = new Date(row.timestamp).getTime() || Number(row.timestamp) || 0;
+            }
 
             // 🟢 เงื่อนไข: ต้องเกินทั้ง Gas (>1200) และ PM2.5 (>=300) พร้อมกัน
             if (gasVal > 1200 && pm25Val >= 300) {
                 if (lastAlertTime === 0 || (currentTimeMs - lastAlertTime) >= 300000) {
                     alertHistory.push(row);
-                    lastAlertTime = currentTimeMs;
+                    if (currentTimeMs > 0) {
+                        lastAlertTime = currentTimeMs;
+                    }
                 }
             }
         });
@@ -130,7 +146,10 @@ async function sendLineNotification(data) {
     const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
     const userId = process.env.LINE_TARGET_ID;
 
-    if (!token || !userId) return;
+    if (!token || !userId) {
+        console.log("⚠️ ข้ามการส่ง LINE: ไม่พบ Token หรือ Target ID ใน .env");
+        return;
+    }
 
     try {
         await axios.post('https://api.line.me/v2/bot/message/push', {
@@ -152,4 +171,4 @@ async function sendLineNotification(data) {
 }
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
