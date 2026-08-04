@@ -19,7 +19,14 @@ let lastLineAlertTime = 0;
 // 📩 1. API รับค่าจาก ESP32
 app.post('/api/sensor', (req, res) => {
     const { pm25, gas, temp, battery } = req.body;
-    const now = new Date().toLocaleTimeString('th-TH');
+    
+    // 🇹🇭 บังคับแปลงเวลาให้ออกมาเป็นเวลาไทย (Asia/Bangkok) แม้รันบน Cloud Server
+    const now = new Date().toLocaleTimeString('th-TH', { 
+        timeZone: 'Asia/Bangkok',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
     
     latestData = { 
         pm25: Number(pm25) || 0, 
@@ -76,11 +83,11 @@ app.get('/api/data', async (req, res) => {
 // 🛠️ Helper Functions
 // -------------------------------------------------------------
 
-// 🛠️ ฟังก์ชันส่งข้อมูลลง Google Sheets (เพิ่ม battery เข้าไปด้วย)
+// 🛠️ ฟังก์ชันส่งข้อมูลลง Google Sheets
 async function saveToGoogleSheet(data) {
     if (!GOOGLE_SHEET_URL) return;
     try {
-        const url = `${GOOGLE_SHEET_URL}?pm25=${data.pm25}&gas=${data.gas}&temp=${data.temp}&battery=${data.battery}`;
+        const url = `${GOOGLE_SHEET_URL}?pm25=${data.pm25}&gas=${data.gas}&temp=${data.temp}`;
         await axios.get(url);
         console.log("✅ บันทึกลง Google Sheet สำเร็จ!");
     } catch (err) {
