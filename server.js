@@ -8,7 +8,7 @@ app.use(cors());
 app.use(express.json());
 
 // ⚠️ URL ของ Google Apps Script Web App
-const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwl1vI3jsiwIUCanltA_BIR5cnT1L9c3V2CJVmId0nTqKxN6qeHrVaudcVJTK09jrmG/exec';
+const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxDy8ui92lCzR4Kmm9lWzZxWvKHUg5K7Dn2TWqh-iqHKeiyw4AqsABL_5w0CKsjjXtz/exec';
 
 // 🔋 โครงสร้างข้อมูลเริ่มต้นรองรับ battery
 let latestData = { pm25: 0, gas: 0, temp: 0, battery: 0, time: "" };
