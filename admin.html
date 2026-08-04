@@ -48,7 +48,7 @@
                     <h1 class='font-bold text-2xl m-0 flex items-center justify-center gap-2 text-slate-800'>
                         SMOKE GUARD A1
                     </h1>
-                    <p class='text-gray-500 mt-2 mb-0 text-sm'>แผงควบคุมและเฝ้าระวังสำหรับผู้ดูแลระบบ</p>
+                    <p class='text-gray-500 mt-2 mb-0 text-sm'>แผงควบคุมสำหรับผู้ดูแลระบบ</p>
                     <div class='flex justify-center mt-3'>
                         <div id='status-pill' class='inline-flex items-center gap-2 rounded-full p-[7px_13px] text-xs font-bold transition-all' style='background:#e5f8ef; color:#188d58;'>
                             <span id='status-text'>🟢 คุณภาพอากาศปกติ</span>
@@ -364,7 +364,7 @@
     }
 
     updateRealtimeData();
-    setInterval(updateRealtimeData, 3000); // อัปเดตข้อมูลทุกๆ 3 วินาที
+    setInterval(updateRealtimeData, 3000); 
 
     window.addEventListener('DOMContentLoaded', () => {
         if (window.lucide) lucide.createIcons();
